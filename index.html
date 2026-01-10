@@ -30,7 +30,7 @@ const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
 const GRAVITY = 0.4;
-const JUMP_FORCE = -7;
+const JUMP_FORCE = 9;
 const MOVE_SPEED = 2;
 
 let level = 1;
@@ -114,7 +114,7 @@ function update() {
     if (keys["ArrowLeft"]) player.x -= MOVE_SPEED;
 
     // Jump
-    if (keys[" "] && player.grounded) {
+    if (keys["Space"] && player.grounded) {
         player.vy = JUMP_FORCE;
         player.grounded = false;
     }
