@@ -2,19 +2,19 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Sanic the Porcupine</title>
+    <title>Jumping dick man</title>
     <style>
         body {
-            background: #000;
             margin: 0;
+            background: #000;
             overflow: hidden;
         }
         canvas {
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
+            display: block;
             width: 100vw;
             height: 100vh;
-            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
     </style>
 </head>
@@ -23,317 +23,557 @@
 
 <script>
 // =========================
-// BASIC GAME SETUP
+// BASIC SETUP
 // =========================
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
+const TILE = 16;
 const GRAVITY = 0.4;
-const JUMP_FORCE = 9;
-const MOVE_SPEED = 2;
+const JUMP_FORCE = -7;
+const MOVE_SPEED = 1.8;
+const FRICTION = 0.8;
 
-let level = 1;
-let ringsCollected = 0;
-
-// =========================
-// PLAYER (Sanic the Porcupine)
-// =========================
-const player = {
-    x: 20,
-    y: 0,
-    w: 14,
-    h: 16,
-    vy: 0,
-    grounded: false
-};
-
-// Animation state
-let sanicFrame = 0;
-let sanicFrameTimer = 0;
-let sanicState = "idle"; // idle, run, jump
-
-// =========================
-// ENEMIES, RINGS, PLATFORMS
-// =========================
-let enemies = [];
-let rings = [];
-let platforms = [];
-
-function spawnLevel(n) {
-    enemies = [];
-    rings = [];
-    platforms = [];
-
-    // Platforms
-    platforms.push({ x: 40, y: 120, w: 60, h: 10 });
-    platforms.push({ x: 140, y: 90, w: 60, h: 10 });
-    platforms.push({ x: 230, y: 130, w: 60, h: 10 });
-
-    // Enemies
-    for (let i = 0; i < n + 2; i++) {
-        enemies.push({
-            x: 80 + i * 40,
-            y: 140,
-            w: 14,
-            h: 14,
-            alive: true,
-            frame: 0,
-            frameTimer: 0,
-            state: "walk"
-        });
-    }
-
-    // Rings
-    for (let i = 0; i < n + 3; i++) {
-        rings.push({
-            x: 60 + i * 30,
-            y: 60,
-            w: 8,
-            h: 8,
-            collected: false
-        });
-    }
-}
-
-spawnLevel(level);
-
-// =========================
-// INPUT
-// =========================
 let keys = {};
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
 
 // =========================
+// WORLD DATA (TILEMAP)
+// =========================
+// Legend:
+// 0 empty
+// 1 ground
+// 2 brick
+// 3 question block (coin)
+// 4 pipe top-left
+// 5 pipe top-right
+// 6 pipe body-left
+// 7 pipe body-right
+// 8 flagpole
+// 9 flag top
+// power-ups & enemies placed separately
+
+const levelWidth = 120; // in tiles
+const levelHeight = 12;
+
+let map = [];
+for (let y = 0; y < levelHeight; y++) {
+    map[y] = [];
+    for (let x = 0; x < levelWidth; x++) {
+        map[y][x] = 0;
+    }
+}
+
+// Build simple terrain
+for (let x = 0; x < levelWidth; x++) {
+    // ground
+    map[10][x] = 1;
+    map[11][x] = 1;
+}
+
+// Some platforms and blocks
+function setTile(x, y, v) {
+    if (x >= 0 && x < levelWidth && y >= 0 && y < levelHeight) {
+        map[y][x] = v;
+    }
+}
+
+// Bricks and question blocks
+for (let x = 15; x < 22; x++) setTile(x, 6, 2);
+setTile(18, 5, 3);
+setTile(19, 5, 2);
+setTile(20, 5, 3);
+
+for (let x = 30; x < 36; x++) setTile(x, 7, 2);
+setTile(32, 4, 3);
+setTile(33, 4, 3);
+
+// Pipes
+function makePipe(baseX, topRow, heightTiles) {
+    setTile(baseX, topRow, 4);
+    setTile(baseX + 1, topRow, 5);
+    for (let y = topRow + 1; y < topRow + heightTiles; y++) {
+        setTile(baseX, y, 6);
+        setTile(baseX + 1, y, 7);
+    }
+}
+makePipe(40, 7, 3);
+makePipe(50, 6, 4);
+makePipe(70, 5, 5);
+
+// Flagpole at the end
+const flagX = levelWidth - 5;
+for (let y = 2; y < 10; y++) setTile(flagX, y, 8);
+setTile(flagX, 1, 9);
+
+// =========================
+// PLAYER
+// =========================
+const player = {
+    x: 3 * TILE,
+    y: 8 * TILE,
+    w: 12,
+    h: 16,
+    vx: 0,
+    vy: 0,
+    grounded: false,
+    big: false,
+    dead: false,
+    win: false
+};
+
+// Player animation
+let pState = "idle"; // idle, run, jump
+let pFrame = 0;
+let pFrameTimer = 0;
+
+// =========================
+// ENTITIES
+// =========================
+let enemies = [];
+let powerUps = [];
+let coins = 0;
+
+// Goomba-like enemies
+function spawnGoomba(tx, ty) {
+    enemies.push({
+        type: "goomba",
+        x: tx * TILE,
+        y: ty * TILE,
+        w: 14,
+        h: 14,
+        vx: -0.5,
+        vy: 0,
+        alive: true,
+        squished: false,
+        frame: 0,
+        frameTimer: 0
+    });
+}
+
+spawnGoomba(20, 9);
+spawnGoomba(26, 9);
+spawnGoomba(45, 9);
+spawnGoomba(60, 9);
+spawnGoomba(80, 9);
+
+// Power-ups (mushrooms)
+function spawnMushroom(tx, ty) {
+    powerUps.push({
+        type: "mushroom",
+        x: tx * TILE,
+        y: ty * TILE,
+        w: 12,
+        h: 12,
+        vx: 0.6,
+        vy: 0,
+        active: true
+    });
+}
+
+// One hidden mushroom
+spawnMushroom(32, 3);
+
+// =========================
+// CAMERA
+// =========================
+let cameraX = 0;
+
+// =========================
+// UTILS
+// =========================
+function worldToTile(x, y) {
+    return {
+        tx: Math.floor(x / TILE),
+        ty: Math.floor(y / TILE)
+    };
+}
+
+function getTile(tx, ty) {
+    if (tx < 0 || tx >= levelWidth || ty < 0 || ty >= levelHeight) return 0;
+    return map[ty][tx];
+}
+
+function isSolidTile(id) {
+    return id === 1 || id === 2 || id === 3 || (id >= 4 && id <= 8);
+}
+
+// =========================
 // GAME LOOP
 // =========================
 function update() {
-    // Movement
-    if (keys["ArrowRight"]) player.x += MOVE_SPEED;
-    if (keys["ArrowLeft"]) player.x -= MOVE_SPEED;
+    if (player.dead || player.win) {
+        // Simple restart on Enter
+        if (keys["Enter"]) location.reload();
+        return;
+    }
+
+    // ----- PLAYER INPUT -----
+    let moving = false;
+    if (keys["ArrowRight"] || keys["d"]) {
+        player.vx += MOVE_SPEED * 0.3;
+        moving = true;
+    }
+    if (keys["ArrowLeft"] || keys["a"]) {
+        player.vx -= MOVE_SPEED * 0.3;
+        moving = true;
+    }
+
+    player.vx *= FRICTION;
+    if (player.vx > MOVE_SPEED) player.vx = MOVE_SPEED;
+    if (player.vx < -MOVE_SPEED) player.vx = -MOVE_SPEED;
 
     // Jump
-    if (keys["Up Arrow"] && player.grounded) {
+    if ((keys[" "] || keys["ArrowUp"] || keys["w"]) && player.grounded) {
         player.vy = JUMP_FORCE;
         player.grounded = false;
     }
 
     // Gravity
     player.vy += GRAVITY;
-    player.y += player.vy;
+    if (player.vy > 8) player.vy = 8;
 
-    // Ground
-    if (player.y + player.h >= 160) {
-        player.y = 160 - player.h;
-        player.vy = 0;
-        player.grounded = true;
-    }
+    // ----- PLAYER COLLISION -----
+    moveEntityWithCollision(player);
 
-    // Platform collisions
-    player.grounded = false;
-    platforms.forEach(p => {
-        if (rectCollision(player, p)) {
-            if (player.vy > 0 && player.y + player.h - player.vy <= p.y) {
-                player.y = p.y - player.h;
-                player.vy = 0;
-                player.grounded = true;
-            }
-        }
-    });
-
-    // Determine Sanic animation state
+    // Update player state
     if (!player.grounded) {
-        sanicState = "jump";
-    } else if (keys["ArrowRight"] || keys["ArrowLeft"]) {
-        sanicState = "run";
+        pState = "jump";
+    } else if (Math.abs(player.vx) > 0.2 && moving) {
+        pState = "run";
     } else {
-        sanicState = "idle";
+        pState = "idle";
     }
 
-    // Sanic animation timing
-    sanicFrameTimer++;
-    if (sanicFrameTimer > 8) {
-        sanicFrameTimer = 0;
-
-        if (sanicState === "idle") sanicFrame = (sanicFrame + 1) % 2;
-        if (sanicState === "run") sanicFrame = (sanicFrame + 1) % 4;
-        if (sanicState === "jump") sanicFrame = 0;
+    // Animation
+    pFrameTimer++;
+    if (pFrameTimer > 8) {
+        pFrameTimer = 0;
+        if (pState === "idle") pFrame = (pFrame + 1) % 2;
+        if (pState === "run") pFrame = (pFrame + 1) % 4;
+        if (pState === "jump") pFrame = 0;
     }
 
-    // Enemy animation
+    // ----- ENEMIES -----
     enemies.forEach(e => {
         if (!e.alive) return;
 
+        e.vy += GRAVITY;
+        moveEntityWithCollision(e, true);
+
+        // Simple AI: reverse on wall
+        const frontX = e.vx > 0 ? e.x + e.w + 1 : e.x - 1;
+        const footY = e.y + e.h - 1;
+        let { tx, ty } = worldToTile(frontX, footY);
+        if (isSolidTile(getTile(tx, ty))) {
+            e.vx *= -1;
+        }
+
+        // Animation
         e.frameTimer++;
         if (e.frameTimer > 10) {
             e.frameTimer = 0;
-
-            if (e.state === "walk") {
-                e.frame = (e.frame + 1) % 4;
-            }
-            if (e.state === "squish") {
-                e.frame = 0;
-            }
+            e.frame = (e.frame + 1) % 2;
         }
     });
 
-    // Enemy collision
+    // Enemy vs player
     enemies.forEach(e => {
         if (!e.alive) return;
-
-        if (rectCollision(player, e)) {
-            if (player.vy > 0) {
-                e.state = "squish";
+        if (rectIntersect(player, e)) {
+            if (player.vy > 0 && player.y + player.h - e.y < 10) {
+                // Stomp
                 e.alive = false;
-                player.vy = JUMP_FORCE * 0.7;
+                e.squished = true;
+                player.vy = JUMP_FORCE * 0.6;
             } else {
-                resetLevel();
+                // Hurt
+                if (player.big) {
+                    player.big = false;
+                    player.vy = JUMP_FORCE * 0.7;
+                } else {
+                    player.dead = true;
+                }
             }
         }
     });
 
-    // Ring collection
-    rings.forEach(r => {
-        if (!r.collected && rectCollision(player, r)) {
-            r.collected = true;
-            ringsCollected++;
+    // ----- POWER-UPS -----
+    powerUps.forEach(p => {
+        if (!p.active) return;
+        p.vy += GRAVITY;
+        moveEntityWithCollision(p, false);
+        if (rectIntersect(player, p)) {
+            p.active = false;
+            player.big = true;
         }
     });
 
-    // Level complete
-    if (enemies.every(e => !e.alive)) {
-        level++;
-        if (level > 10) level = 1;
-        spawnLevel(level);
+    // ----- QUESTION BLOCKS, BRICKS, COIN LOGIC -----
+    handleBlockHits();
+
+    // ----- FLAG / WIN -----
+    const playerTile = worldToTile(player.x + player.w / 2, player.y + player.h / 2);
+    const t = getTile(playerTile.tx, playerTile.ty);
+    if (t === 8 || t === 9) {
+        player.win = true;
+    }
+
+    // ----- CAMERA -----
+    cameraX = player.x - canvas.width / 2;
+    if (cameraX < 0) cameraX = 0;
+    const maxCam = levelWidth * TILE - canvas.width;
+    if (cameraX > maxCam) cameraX = maxCam;
+
+    // Fall death
+    if (player.y > canvas.height + 100) player.dead = true;
+}
+
+function moveEntityWithCollision(ent, enemy = false) {
+    // Horizontal
+    ent.x += ent.vx;
+    let { tx: left, ty: top } = worldToTile(ent.x, ent.y);
+    let { tx: right, ty: bottom } = worldToTile(ent.x + ent.w, ent.y + ent.h);
+
+    for (let y = top; y <= bottom; y++) {
+        for (let x = left; x <= right; x++) {
+            const tile = getTile(x, y);
+            if (isSolidTile(tile)) {
+                if (ent.vx > 0) {
+                    ent.x = x * TILE - ent.w - 0.01;
+                } else if (ent.vx < 0) {
+                    ent.x = (x + 1) * TILE + 0.01;
+                }
+                ent.vx = enemy ? -ent.vx : 0;
+            }
+        }
+    }
+
+    // Vertical
+    ent.y += ent.vy;
+    ({ tx: left, ty: top } = worldToTile(ent.x, ent.y));
+    ({ tx: right, ty: bottom } = worldToTile(ent.x + ent.w, ent.y + ent.h));
+
+    let onGround = false;
+
+    for (let y = top; y <= bottom; y++) {
+        for (let x = left; x <= right; x++) {
+            const tile = getTile(x, y);
+            if (isSolidTile(tile)) {
+                if (ent.vy > 0) {
+                    ent.y = y * TILE - ent.h - 0.01;
+                    ent.vy = 0;
+                    onGround = true;
+                } else if (ent.vy < 0) {
+                    ent.y = (y + 1) * TILE + 0.01;
+                    ent.vy = 0;
+                }
+            }
+        }
+    }
+
+    if (ent === player) {
+        player.grounded = onGround;
+        if (player.big) {
+            player.h = 24;
+        } else {
+            player.h = 16;
+        }
     }
 }
 
-function resetLevel() {
-    player.x = 20;
-    player.y = 0;
-    player.vy = 0;
-    spawnLevel(level);
+function rectIntersect(a, b) {
+    return !(
+        a.x + a.w < b.x ||
+        a.x > b.x + b.w ||
+        a.y + a.h < b.y ||
+        a.y > b.y + b.h
+    );
+}
+
+// Handle blocks hit from below by player
+function handleBlockHits() {
+    if (!(keys[" "] || keys["ArrowUp"] || keys["w"])) return;
+    if (player.vy >= 0) return; // only when going up
+
+    const headX = player.x + player.w / 2;
+    const headY = player.y;
+    const { tx, ty } = worldToTile(headX, headY - 1);
+    const tile = getTile(tx, ty);
+
+    if (tile === 2 || tile === 3) {
+        // Make the player bump slightly
+        player.vy = 1;
+
+        // Brick
+        if (tile === 2) {
+            if (player.big) {
+                // break brick
+                setTile(tx, ty, 0);
+            } else {
+                // just bump
+            }
+        }
+
+        // Question block with coin
+        if (tile === 3) {
+            coins++;
+            setTile(tx, ty, 0);
+        }
+    }
 }
 
 // =========================
 // RENDER
 // =========================
 function draw() {
-    ctx.fillStyle = "#202040";
+    ctx.fillStyle = "#5cd0ff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Ground
-    ctx.fillStyle = "#303030";
-    ctx.fillRect(0, 160, canvas.width, 20);
+    ctx.save();
+    ctx.translate(-cameraX, 0);
 
-    // Platforms
-    ctx.fillStyle = "#505050";
-    platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, p.h));
+    // Background hills (simple)
+    ctx.fillStyle = "#57b35c";
+    ctx.fillRect(20, 120, 60, 40);
+    ctx.fillRect(80, 110, 80, 50);
+    ctx.fillRect(200, 115, 70, 45);
 
-    // Sanic
-    drawSanic(player.x, player.y);
+    // Tiles
+    for (let y = 0; y < levelHeight; y++) {
+        for (let x = 0; x < levelWidth; x++) {
+            const t = map[y][x];
+            const px = x * TILE;
+            const py = y * TILE;
+
+            if (t === 1) {
+                ctx.fillStyle = "#8b4513";
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = "#a06030";
+                ctx.fillRect(px, py + 10, TILE, 6);
+            } else if (t === 2) {
+                ctx.fillStyle = "#b06030";
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = "#d08040";
+                ctx.fillRect(px + 2, py + 2, 12, 4);
+                ctx.fillRect(px + 2, py + 8, 12, 4);
+            } else if (t === 3) {
+                ctx.fillStyle = "#d0a030";
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = "#fff6a0";
+                ctx.fillRect(px + 4, py + 4, 8, 2);
+                ctx.fillRect(px + 4, py + 8, 8, 2);
+            } else if (t === 4 || t === 5 || t === 6 || t === 7) {
+                // Pipes
+                ctx.fillStyle = "#2ea03f";
+                ctx.fillRect(px, py, TILE, TILE);
+                ctx.fillStyle = "#3ccf52";
+                ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 4);
+            } else if (t === 8) {
+                // Flagpole
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(px + 7, py, 2, TILE);
+            } else if (t === 9) {
+                // Flag top
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(px + 7, py, 2, TILE);
+                ctx.fillStyle = "#ff3030";
+                ctx.fillRect(px + 9, py + 2, 10, 6);
+            }
+        }
+    }
+
+    // Power-ups
+    powerUps.forEach(p => {
+        if (!p.active) return;
+        ctx.fillStyle = "#ff0000";
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(p.x + 3, p.y + 3, 2, 2);
+        ctx.fillRect(p.x + 7, p.y + 3, 2, 2);
+    });
 
     // Enemies
-    enemies.forEach(drawEnemy);
+    enemies.forEach(e => {
+        if (!e.alive && !e.squished) return;
 
-    // Rings
-    rings.forEach(r => {
-        if (!r.collected) {
-            ctx.fillStyle = "#ffdd00";
-            ctx.fillRect(r.x, r.y, r.w, r.h);
+        if (e.squished) {
+            ctx.fillStyle = "#7a3b00";
+            ctx.fillRect(e.x, e.y + e.h - 6, e.w, 6);
+            return;
+        }
+
+        if (e.type === "goomba") {
+            ctx.fillStyle = "#a0522d";
+            if (e.frame === 0) {
+                ctx.fillRect(e.x, e.y, e.w, e.h);
+            } else {
+                ctx.fillRect(e.x, e.y + 1, e.w, e.h - 1);
+            }
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(e.x + 3, e.y + 4, 2, 2);
+            ctx.fillRect(e.x + 9, e.y + 4, 2, 2);
         }
     });
 
+    // Player
+    drawPlayer();
+
+    ctx.restore();
+
     // HUD
     ctx.fillStyle = "#ffffff";
-    ctx.fillText("Rings: " + ringsCollected, 10, 10);
-    ctx.fillText("Level: " + level, 10, 20);
-}
+    ctx.fillText("Coins: " + coins, 10, 10);
+    ctx.fillText("Big: " + (player.big ? "YES" : "NO"), 10, 20);
 
-function drawSanic(x, y) {
-    ctx.fillStyle = "#2aa9ff";
-
-    // IDLE
-    if (sanicState === "idle") {
-        if (sanicFrame === 0) {
-            ctx.fillRect(x, y, 14, 16);
-            ctx.fillRect(x - 3, y + 4, 4, 4);
-        }
-        if (sanicFrame === 1) {
-            ctx.fillRect(x, y + 1, 14, 15);
-            ctx.fillRect(x - 3, y + 5, 4, 4);
-        }
+    if (player.dead) {
+        ctx.fillStyle = "#000000aa";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText("YOU DIED - Press Enter", 90, 90);
     }
-
-    // RUN
-    if (sanicState === "run") {
-        if (sanicFrame === 0) {
-            ctx.fillRect(x, y, 14, 16);
-            ctx.fillRect(x - 4, y + 3, 4, 4);
-        }
-        if (sanicFrame === 1) {
-            ctx.fillRect(x, y + 1, 14, 15);
-            ctx.fillRect(x - 2, y + 2, 4, 4);
-        }
-        if (sanicFrame === 2) {
-            ctx.fillRect(x, y, 14, 16);
-            ctx.fillRect(x - 3, y + 5, 4, 4);
-        }
-        if (sanicFrame === 3) {
-            ctx.fillRect(x, y + 1, 14, 15);
-            ctx.fillRect(x - 5, y + 4, 4, 4);
-        }
-    }
-
-    // JUMP
-    if (sanicState === "jump") {
-        ctx.fillRect(x, y, 14, 16);
-        ctx.fillRect(x - 3, y + 2, 4, 4);
-        ctx.fillRect(x - 2, y + 6, 4, 4);
+    if (player.win) {
+        ctx.fillStyle = "#000000aa";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText("YOU WIN! - Press Enter", 90, 90);
     }
 }
 
-function drawEnemy(e) {
-    if (!e.alive) return;
+function drawPlayer() {
+    const x = player.x;
+    const y = player.y;
 
-    ctx.fillStyle = "#ff4444";
+    ctx.fillStyle = "#ffcc66";
 
-    // WALK
-    if (e.state === "walk") {
-        if (e.frame === 0) ctx.fillRect(e.x, e.y, e.w, e.h);
-        if (e.frame === 1) {
-            ctx.fillRect(e.x, e.y + 1, e.w, e.h - 1);
-            ctx.fillRect(e.x - 1, e.y + 3, 3, 3);
+    const bodyHeight = player.big ? 24 : 16;
+
+    if (pState === "idle") {
+        if (pFrame === 0) {
+            ctx.fillRect(x, y, 12, bodyHeight);
+        } else {
+            ctx.fillRect(x, y + 1, 12, bodyHeight - 1);
         }
-        if (e.frame === 2) {
-            ctx.fillRect(e.x, e.y, e.w, e.h);
-            ctx.fillRect(e.x + 1, e.y + 2, 3, 3);
+    } else if (pState === "run") {
+        if (pFrame === 0 || pFrame === 2) {
+            ctx.fillRect(x, y, 12, bodyHeight);
+        } else {
+            ctx.fillRect(x, y + 1, 12, bodyHeight - 1);
         }
-        if (e.frame === 3) {
-            ctx.fillRect(e.x, e.y + 1, e.w, e.h - 1);
-            ctx.fillRect(e.x - 2, e.y + 4, 3, 3);
-        }
+    } else if (pState === "jump") {
+        ctx.fillRect(x, y, 12, bodyHeight);
     }
 
-    // SQUISH
-    if (e.state === "squish") {
-        ctx.fillRect(e.x, e.y + 6, e.w, 6);
-    }
+    // Hat
+    ctx.fillStyle = "#ff0000";
+    ctx.fillRect(x, y - 4, 12, 4);
 }
 
 // =========================
-// COLLISION
+// MAIN LOOP
 // =========================
-function rectCollision(a, b) {
-    return (
-        a.x < b.x + b.w &&
-        a.x + a.w > b.x &&
-        a.y < b.y + b.h &&
-        a.y + a.h > b.y
-    );
-}
-
 function loop() {
     update();
     draw();
