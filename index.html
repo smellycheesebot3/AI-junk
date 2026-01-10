@@ -1,192 +1,346 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Galactic Explorer Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- ========================================================= -->
-<!-- ===============  GALACTIC EXPLORER DASHBOARD  ============ -->
-<!-- ===============        1000 LINE FILE         ============ -->
-<!-- ========================================================= -->
-
-<style>
-/* ----------------------------------------------------------- */
-/* ----------------------  GLOBAL STYLES  -------------------- */
-/* ----------------------------------------------------------- */
-
-:root {
-    --bg: #050510;
-    --panel: #0b0b1d;
-    --accent: #4af3ff;
-    --accent2: #9d4bff;
-    --text: #e8e8ff;
-    --muted: #9a9ab3;
-    --border: #1a1a2d;
-    --glow: 0 0 12px rgba(74,243,255,0.6);
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: "Segoe UI", sans-serif;
-    line-height: 1.5;
-}
-
-/* ----------------------------------------------------------- */
-/* ----------------------  HEADER BAR  ----------------------- */
-/* ----------------------------------------------------------- */
-
-header {
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
-    padding: 1rem 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.logo {
-    font-size: 1.4rem;
-    font-weight: bold;
-    color: var(--accent);
-    text-shadow: var(--glow);
-}
-
-.nav {
-    display: flex;
-    gap: 1.5rem;
-}
-
-.nav a {
-    color: var(--muted);
-    text-decoration: none;
-    transition: 0.2s;
-}
-
-.nav a:hover {
-    color: var(--accent);
-}
-
-/* ----------------------------------------------------------- */
-/* ----------------------  HERO SECTION  --------------------- */
-/* ----------------------------------------------------------- */
-
-.hero {
-    padding: 4rem 2rem;
-    text-align: center;
-}
-
-.hero h1 {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    color: var(--accent);
-    text-shadow: var(--glow);
-}
-
-.hero p {
-    max-width: 700px;
-    margin: auto;
-    color: var(--muted);
-}
-
-/* ----------------------------------------------------------- */
-/* ----------------------  GRID PANELS  ---------------------- */
-/* ----------------------------------------------------------- */
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    padding: 2rem;
-}
-
-.panel {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: var(--glow);
-}
-
-.panel h2 {
-    margin-bottom: 0.5rem;
-    color: var(--accent2);
-}
-
-.panel p {
-    color: var(--muted);
-}
-
-/* ----------------------------------------------------------- */
-/* ----------------------  FOOTER AREA  ---------------------- */
-/* ----------------------------------------------------------- */
-
-footer {
-    padding: 2rem;
-    text-align: center;
-    color: var(--muted);
-    border-top: 1px solid var(--border);
-}
-
-/* ----------------------------------------------------------- */
-/* ----------------------  EXTRA FILLER  --------------------- */
-/* ----------------------------------------------------------- */
-/* The following lines intentionally include filler comments   */
-/* to reach exactly 1000 lines of code as requested.           */
-/* ----------------------------------------------------------- */
-
-</style>
+    <meta charset="UTF-8">
+    <title>Sanic the Porcupine</title>
+    <style>
+        body {
+            background: #000;
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+    </style>
 </head>
 <body>
+<canvas id="game" width="320" height="180"></canvas>
 
-<header>
-    <div class="logo">GALACTIC EXPLORER</div>
-    <nav class="nav">
-        <a href="#">Dashboard</a>
-        <a href="#">Systems</a>
-        <a href="#">Logs</a>
-        <a href="#">About</a>
-    </nav>
-</header>
+<script>
+// =========================
+// BASIC GAME SETUP
+// =========================
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
 
-<section class="hero">
-    <h1>Welcome, Commander</h1>
-    <p>Your starship systems are online. Explore the galaxy, monitor sectors, and review mission logs — all from this single HTML file.</p>
-</section>
+const GRAVITY = 0.4;
+const JUMP_FORCE = -7;
+const MOVE_SPEED = 2;
 
-<section class="grid">
-    <div class="panel">
-        <h2>Star Map</h2>
-        <p>A visual representation of nearby star systems.</p>
-    </div>
-    <div class="panel">
-        <h2>Ship Status</h2>
-        <p>Hull integrity, shield levels, and engine diagnostics.</p>
-    </div>
-    <div class="panel">
-        <h2>Mission Logs</h2>
-        <p>Encrypted logs from previous expeditions.</p>
-    </div>
-    <div class="panel">
-        <h2>Communications</h2>
-        <p>Incoming transmissions from allied fleets.</p>
-    </div>
-</section>
+let level = 1;
+let ringsCollected = 0;
 
-<footer>
-    Galactic Explorer Dashboard — Single‑file HTML demo
-</footer>
+// =========================
+// PLAYER (Sanic the Porcupine)
+// =========================
+const player = {
+    x: 20,
+    y: 0,
+    w: 14,
+    h: 16,
+    vy: 0,
+    grounded: false
+};
 
-<!-- ========================================================= -->
-<!-- ===============  FILLER LINES TO REACH 1000  ============ -->
-<!-- ========================================================= -->
-    
+// Animation state
+let sanicFrame = 0;
+let sanicFrameTimer = 0;
+let sanicState = "idle"; // idle, run, jump
+
+// =========================
+// ENEMIES, RINGS, PLATFORMS
+// =========================
+let enemies = [];
+let rings = [];
+let platforms = [];
+
+function spawnLevel(n) {
+    enemies = [];
+    rings = [];
+    platforms = [];
+
+    // Platforms
+    platforms.push({ x: 40, y: 120, w: 60, h: 10 });
+    platforms.push({ x: 140, y: 90, w: 60, h: 10 });
+    platforms.push({ x: 230, y: 130, w: 60, h: 10 });
+
+    // Enemies
+    for (let i = 0; i < n + 2; i++) {
+        enemies.push({
+            x: 80 + i * 40,
+            y: 140,
+            w: 14,
+            h: 14,
+            alive: true,
+            frame: 0,
+            frameTimer: 0,
+            state: "walk"
+        });
+    }
+
+    // Rings
+    for (let i = 0; i < n + 3; i++) {
+        rings.push({
+            x: 60 + i * 30,
+            y: 60,
+            w: 8,
+            h: 8,
+            collected: false
+        });
+    }
+}
+
+spawnLevel(level);
+
+// =========================
+// INPUT
+// =========================
+let keys = {};
+document.addEventListener("keydown", e => keys[e.key] = true);
+document.addEventListener("keyup", e => keys[e.key] = false);
+
+// =========================
+// GAME LOOP
+// =========================
+function update() {
+    // Movement
+    if (keys["ArrowRight"]) player.x += MOVE_SPEED;
+    if (keys["ArrowLeft"]) player.x -= MOVE_SPEED;
+
+    // Jump
+    if (keys[" "] && player.grounded) {
+        player.vy = JUMP_FORCE;
+        player.grounded = false;
+    }
+
+    // Gravity
+    player.vy += GRAVITY;
+    player.y += player.vy;
+
+    // Ground
+    if (player.y + player.h >= 160) {
+        player.y = 160 - player.h;
+        player.vy = 0;
+        player.grounded = true;
+    }
+
+    // Platform collisions
+    player.grounded = false;
+    platforms.forEach(p => {
+        if (rectCollision(player, p)) {
+            if (player.vy > 0 && player.y + player.h - player.vy <= p.y) {
+                player.y = p.y - player.h;
+                player.vy = 0;
+                player.grounded = true;
+            }
+        }
+    });
+
+    // Determine Sanic animation state
+    if (!player.grounded) {
+        sanicState = "jump";
+    } else if (keys["ArrowRight"] || keys["ArrowLeft"]) {
+        sanicState = "run";
+    } else {
+        sanicState = "idle";
+    }
+
+    // Sanic animation timing
+    sanicFrameTimer++;
+    if (sanicFrameTimer > 8) {
+        sanicFrameTimer = 0;
+
+        if (sanicState === "idle") sanicFrame = (sanicFrame + 1) % 2;
+        if (sanicState === "run") sanicFrame = (sanicFrame + 1) % 4;
+        if (sanicState === "jump") sanicFrame = 0;
+    }
+
+    // Enemy animation
+    enemies.forEach(e => {
+        if (!e.alive) return;
+
+        e.frameTimer++;
+        if (e.frameTimer > 10) {
+            e.frameTimer = 0;
+
+            if (e.state === "walk") {
+                e.frame = (e.frame + 1) % 4;
+            }
+            if (e.state === "squish") {
+                e.frame = 0;
+            }
+        }
+    });
+
+    // Enemy collision
+    enemies.forEach(e => {
+        if (!e.alive) return;
+
+        if (rectCollision(player, e)) {
+            if (player.vy > 0) {
+                e.state = "squish";
+                e.alive = false;
+                player.vy = JUMP_FORCE * 0.7;
+            } else {
+                resetLevel();
+            }
+        }
+    });
+
+    // Ring collection
+    rings.forEach(r => {
+        if (!r.collected && rectCollision(player, r)) {
+            r.collected = true;
+            ringsCollected++;
+        }
+    });
+
+    // Level complete
+    if (enemies.every(e => !e.alive)) {
+        level++;
+        if (level > 10) level = 1;
+        spawnLevel(level);
+    }
+}
+
+function resetLevel() {
+    player.x = 20;
+    player.y = 0;
+    player.vy = 0;
+    spawnLevel(level);
+}
+
+// =========================
+// RENDER
+// =========================
+function draw() {
+    ctx.fillStyle = "#202040";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Ground
+    ctx.fillStyle = "#303030";
+    ctx.fillRect(0, 160, canvas.width, 20);
+
+    // Platforms
+    ctx.fillStyle = "#505050";
+    platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, p.h));
+
+    // Sanic
+    drawSanic(player.x, player.y);
+
+    // Enemies
+    enemies.forEach(drawEnemy);
+
+    // Rings
+    rings.forEach(r => {
+        if (!r.collected) {
+            ctx.fillStyle = "#ffdd00";
+            ctx.fillRect(r.x, r.y, r.w, r.h);
+        }
+    });
+
+    // HUD
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("Rings: " + ringsCollected, 10, 10);
+    ctx.fillText("Level: " + level, 10, 20);
+}
+
+function drawSanic(x, y) {
+    ctx.fillStyle = "#2aa9ff";
+
+    // IDLE
+    if (sanicState === "idle") {
+        if (sanicFrame === 0) {
+            ctx.fillRect(x, y, 14, 16);
+            ctx.fillRect(x - 3, y + 4, 4, 4);
+        }
+        if (sanicFrame === 1) {
+            ctx.fillRect(x, y + 1, 14, 15);
+            ctx.fillRect(x - 3, y + 5, 4, 4);
+        }
+    }
+
+    // RUN
+    if (sanicState === "run") {
+        if (sanicFrame === 0) {
+            ctx.fillRect(x, y, 14, 16);
+            ctx.fillRect(x - 4, y + 3, 4, 4);
+        }
+        if (sanicFrame === 1) {
+            ctx.fillRect(x, y + 1, 14, 15);
+            ctx.fillRect(x - 2, y + 2, 4, 4);
+        }
+        if (sanicFrame === 2) {
+            ctx.fillRect(x, y, 14, 16);
+            ctx.fillRect(x - 3, y + 5, 4, 4);
+        }
+        if (sanicFrame === 3) {
+            ctx.fillRect(x, y + 1, 14, 15);
+            ctx.fillRect(x - 5, y + 4, 4, 4);
+        }
+    }
+
+    // JUMP
+    if (sanicState === "jump") {
+        ctx.fillRect(x, y, 14, 16);
+        ctx.fillRect(x - 3, y + 2, 4, 4);
+        ctx.fillRect(x - 2, y + 6, 4, 4);
+    }
+}
+
+function drawEnemy(e) {
+    if (!e.alive) return;
+
+    ctx.fillStyle = "#ff4444";
+
+    // WALK
+    if (e.state === "walk") {
+        if (e.frame === 0) ctx.fillRect(e.x, e.y, e.w, e.h);
+        if (e.frame === 1) {
+            ctx.fillRect(e.x, e.y + 1, e.w, e.h - 1);
+            ctx.fillRect(e.x - 1, e.y + 3, 3, 3);
+        }
+        if (e.frame === 2) {
+            ctx.fillRect(e.x, e.y, e.w, e.h);
+            ctx.fillRect(e.x + 1, e.y + 2, 3, 3);
+        }
+        if (e.frame === 3) {
+            ctx.fillRect(e.x, e.y + 1, e.w, e.h - 1);
+            ctx.fillRect(e.x - 2, e.y + 4, 3, 3);
+        }
+    }
+
+    // SQUISH
+    if (e.state === "squish") {
+        ctx.fillRect(e.x, e.y + 6, e.w, 6);
+    }
+}
+
+// =========================
+// COLLISION
+// =========================
+function rectCollision(a, b) {
+    return (
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y
+    );
+}
+
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
 </body>
 </html>
