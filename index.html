@@ -1,523 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Mini Kart Racer</title>
-  <style>
-    :root {
-      --track-color: #444;
-      --grass-color: #0b6623;
-      --car1-color: #ff3333;
-      --car2-color: #3399ff;
-      --line-color: #f7f7f7;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background: #111;
-      color: #eee;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      height: 100vh;
-      overflow: hidden;
-      padding-top: 10px;
-    }
-
-    h1 {
-      font-size: 22px;
-      margin-bottom: 6px;
-      text-align: center;
-    }
-
-    .info {
-      font-size: 12px;
-      margin-bottom: 8px;
-      text-align: center;
-      line-height: 1.4;
-    }
-
-    #gameContainer {
-      position: relative;
-      border: 3px solid #fff;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    canvas {
-      display: block;
-      background: #000;
-    }
-
-    #hud {
-      position: absolute;
-      top: 4px;
-      left: 4px;
-      right: 4px;
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      text-shadow: 1px 1px 2px #000;
-      pointer-events: none;
-      color: #fff;
-    }
-
-    #message {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 24px;
-      font-weight: bold;
-      color: #fff;
-      text-align: center;
-      text-shadow: 2px 2px 4px #000;
-      pointer-events: none;
-    }
-
-    .badge {
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(0, 0, 0, 0.6);
-    }
-
-    .car1-label {
-      color: var(--car1-color);
-      font-weight: bold;
-    }
-
-    .car2-label {
-      color: var(--car2-color);
-      font-weight: bold;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>3D Kart Racer</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #000; }
+  #info {
+    position: absolute; top: 10px; left: 10px;
+    color: white; font-family: sans-serif; font-size: 14px;
+    background: rgba(0,0,0,0.4); padding: 8px 12px; border-radius: 6px;
+  }
+</style>
 </head>
 <body>
-  <h1>Mini Kart Racer</h1>
-  <div class="info">
-    Player 1: <span class="car1-label">Arrow keys</span> |
-    Player 2: <span class="car2-label">W A S D</span> |
-    Hold accelerate to start lights!
-    <br />
-    First to finish 3 laps wins.
-  </div>
-
-  <div id="gameContainer">
-    <canvas id="game" width="800" height="600"></canvas>
-    <div id="hud">
-      <div class="badge" id="p1Hud">P1 Lap: 0/3 | Time: 0.0</div>
-      <div class="badge" id="middleHud">Lights: READY</div>
-      <div class="badge" id="p2Hud">P2 Lap: 0/3 | Time: 0.0</div>
-    </div>
-    <div id="message"></div>
-  </div>
-
-  <script>
-    // Basic Mario Kart–style top-down racer using canvas
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-
-    const p1Hud = document.getElementById("p1Hud");
-    const p2Hud = document.getElementById("p2Hud");
-    const middleHud = document.getElementById("middleHud");
-    const messageEl = document.getElementById("message");
-
-    const W = canvas.width;
-    const H = canvas.height;
-
-    // Track configuration (simple rectangle with rounded-ish corners + checkpoints)
-    const track = {
-      outerMargin: 40,
-      innerMargin: 170,
-      cornerRadius: 80,
-      lapsToWin: 3,
-      startLineX: W / 2,
-      startLineY1: H / 2 - 60,
-      startLineY2: H / 2 + 60
-    };
-
-    // Utility
-    function clamp(v, min, max) {
-      return Math.max(min, Math.min(max, v));
-    }
-
-    // Car definition
-    function createCar(color, x, y, angle) {
-      return {
-        x,
-        y,
-        angle,
-        vx: 0,
-        vy: 0,
-        speed: 0,
-        maxSpeed: 4,
-        accel: 0.18,
-        brake: 0.22,
-        friction: 0.06,
-        turnSpeed: 0.055,
-        color,
-        width: 22,
-        height: 34,
-        lap: 0,
-        bestLapTime: null,
-        currentLapTime: 0,
-        checkpoints: 0,
-        lastCheckpointSide: null,
-        finished: false
-      };
-    }
-
-    const car1 = createCar("#ff3333", track.startLineX - 30, H / 2 + 10, -Math.PI / 2);
-    const car2 = createCar("#3399ff", track.startLineX + 30, H / 2 + 50, -Math.PI / 2);
-
-    const state = {
-      running: false,
-      countdown: 0, // 0 = not started, >0 running seconds
-      lightsStage: 0, // 0: off, 1-3: red lights, 4: GO
-      winner: null,
-      raceTime: 0
-    };
-
-    // Input
-    const keys = {
-      ArrowUp: false,
-      ArrowDown: false,
-      ArrowLeft: false,
-      ArrowRight: false,
-      KeyW: false,
-      KeyS: false,
-      KeyA: false,
-      KeyD: false
-    };
-
-    window.addEventListener("keydown", (e) => {
-      if (keys.hasOwnProperty(e.code)) {
-        keys[e.code] = true;
-        e.preventDefault();
-      }
-    });
-
-    window.addEventListener("keyup", (e) => {
-      if (keys.hasOwnProperty(e.code)) {
-        keys[e.code] = false;
-        e.preventDefault();
-      }
-    });
-
-    // Track helpers
-    function isOnTrack(x, y) {
-      const om = track.outerMargin;
-      const im = track.innerMargin;
-      return (
-        x > om &&
-        x < W - om &&
-        y > om &&
-        y < H - om &&
-        !(x > im && x < W - im && y > im && y < H - im)
-      );
-    }
-
-    function crossedStartLine(prevX, prevY, x, y) {
-      // Start line is vertical at startLineX, center of track
-      const sx = track.startLineX;
-      const up = prevY > H / 2 && y <= H / 2; // crossing upward
-      const crossedVertical =
-        (prevX < sx && x >= sx) || (prevX > sx && x <= sx) || Math.abs(x - sx) < 2;
-      return up && crossedVertical;
-    }
-
-    function updateLap(car, dt) {
-      if (car.finished) return;
-
-      car.currentLapTime += dt;
-
-      // Simple checkpoint logic: require car to pass right side and left side before crossing start
-      const centerY = H / 2;
-
-      // Right checkpoint
-      if (car.x > W - track.outerMargin - 10 && Math.abs(car.y - centerY) < 120) {
-        car.lastCheckpointSide = "right";
-      }
-
-      // Left checkpoint
-      if (car.x < track.outerMargin + 10 && Math.abs(car.y - centerY) < 120) {
-        if (car.lastCheckpointSide === "right") {
-          car.checkpoints = 1;
-        }
-        car.lastCheckpointSide = "left";
-      }
-
-      const prevX = car.prevX;
-      const prevY = car.prevY;
-
-      if (crossedStartLine(prevX, prevY, car.x, car.y) && car.checkpoints === 1) {
-        car.lap += 1;
-        car.checkpoints = 0;
-        car.lastCheckpointSide = null;
-
-        if (car.lap === 1) {
-          // Starting lap (first time passing the line after start)
-          car.currentLapTime = 0;
-        } else {
-          // Completed a lap
-          if (car.bestLapTime === null || car.currentLapTime < car.bestLapTime) {
-            car.bestLapTime = car.currentLapTime;
-          }
-          car.currentLapTime = 0;
-        }
-
-        if (car.lap >= track.lapsToWin && !car.finished) {
-          car.finished = true;
-          if (!state.winner) {
-            state.winner = car === car1 ? "Player 1" : "Player 2";
-            messageEl.textContent = state.winner + " wins!";
-          }
-        }
-      }
-    }
-
-    // Physics update
-    function updateCar(car, input, dt) {
-      car.prevX = car.x;
-      car.prevY = car.y;
-
-      let throttle = 0;
-      let steer = 0;
-
-      if (input.up) throttle += 1;
-      if (input.down) throttle -= 1;
-      if (input.left) steer -= 1;
-      if (input.right) steer += 1;
-
-      // Acceleration / braking
-      if (throttle > 0) {
-        car.speed += car.accel;
-      } else if (throttle < 0) {
-        car.speed -= car.brake;
-      } else {
-        // No throttle: apply friction
-        if (car.speed > 0) {
-          car.speed = Math.max(0, car.speed - car.friction);
-        } else if (car.speed < 0) {
-          car.speed = Math.min(0, car.speed + car.friction);
-        }
-      }
-
-      car.speed = clamp(car.speed, -car.maxSpeed * 0.5, car.maxSpeed);
-
-      // Steering only when moving
-      if (Math.abs(car.speed) > 0.1) {
-        car.angle += steer * car.turnSpeed * (car.speed / car.maxSpeed);
-      }
-
-      // Movement
-      const cos = Math.cos(car.angle);
-      const sin = Math.sin(car.angle);
-
-      car.vx = cos * car.speed;
-      car.vy = sin * car.speed;
-
-      car.x += car.vx;
-      car.y += car.vy;
-
-      // Off-track penalty: strong friction + slow speed
-      if (!isOnTrack(car.x, car.y)) {
-        car.speed *= 0.95;
-      }
-
-      // Keep on screen
-      car.x = clamp(car.x, 10, W - 10);
-      car.y = clamp(car.y, 10, H - 10);
-    }
-
-    // Drawing
-    function drawTrack() {
-      // Grass
-      ctx.fillStyle = getComputedStyle(document.documentElement)
-        .getPropertyValue("--grass-color");
-      ctx.fillRect(0, 0, W, H);
-
-      // Outer track rectangle
-      const om = track.outerMargin;
-      const im = track.innerMargin;
-
-      ctx.fillStyle = getComputedStyle(document.documentElement)
-        .getPropertyValue("--track-color");
-
-      ctx.fillRect(om, om, W - om * 2, H - om * 2);
-
-      // Inner grass (hole)
-      ctx.fillStyle = getComputedStyle(document.documentElement)
-        .getPropertyValue("--grass-color");
-      ctx.fillRect(im, im, W - im * 2, H - im * 2);
-
-      // Lane markers (simple white outlines)
-      ctx.strokeStyle = getComputedStyle(document.documentElement)
-        .getPropertyValue("--line-color");
-      ctx.lineWidth = 4;
-      ctx.setLineDash([16, 10]);
-
-      // Outer lane
-      ctx.strokeRect(om + 18, om + 18, W - (om + 18) * 2, H - (om + 18) * 2);
-
-      // Inner lane
-      ctx.strokeRect(im - 18, im - 18, W - (im - 18) * 2, H - (im - 18) * 2);
-
-      ctx.setLineDash([]);
-
-      // Start/Finish line
-      ctx.save();
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.moveTo(track.startLineX, track.startLineY1);
-      ctx.lineTo(track.startLineX, track.startLineY2);
-      ctx.stroke();
-
-      // Checker pattern
-      ctx.lineWidth = 1;
-      const segment = 10;
-      for (let y = track.startLineY1; y < track.startLineY2; y += segment) {
-        ctx.fillStyle = (Math.floor(y / segment) % 2 === 0) ? "#000" : "#fff";
-        ctx.fillRect(track.startLineX - 8, y, 16, segment);
-      }
-
-      ctx.restore();
-    }
-
-    function drawCar(car) {
-      ctx.save();
-      ctx.translate(car.x, car.y);
-      ctx.rotate(car.angle);
-
-      // Body
-      ctx.fillStyle = car.color;
-      ctx.fillRect(-car.width / 2, -car.height / 2, car.width, car.height);
-
-      // Front indicator
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(-car.width / 4, -car.height / 2, car.width / 2, 4);
-
-      // Wheels
-      ctx.fillStyle = "#111";
-      const w = car.width / 2 + 2;
-      const h = car.height / 2 + 2;
-      ctx.fillRect(-w / 2, -h / 2, w, 4); // front
-      ctx.fillRect(-w / 2, h / 2 - 4, w, 4); // rear
-
-      ctx.restore();
-    }
-
-    function formatTime(t) {
-      return t.toFixed(1);
-    }
-
-    // Lights / countdown
-    function updateLights(dt) {
-      // Start when at least one player holds accelerate
-      const p1Accel = keys.ArrowUp;
-      const p2Accel = keys.KeyW;
-
-      if (!state.running && state.lightsStage === 0 && (p1Accel || p2Accel)) {
-        state.countdown = 0;
-        state.lightsStage = 1;
-      }
-
-      if (state.lightsStage > 0 && state.lightsStage < 4) {
-        state.countdown += dt;
-        if (state.countdown >= state.lightsStage) {
-          state.lightsStage += 1;
-          if (state.lightsStage === 4) {
-            state.running = true;
-            state.raceTime = 0;
-          }
-        }
-      }
-
-      // Update HUD text for lights
-      if (state.lightsStage === 0) {
-        middleHud.textContent = "Lights: READY";
-      } else if (state.lightsStage >= 1 && state.lightsStage <= 3) {
-        middleHud.textContent = "Lights: " + "⦿ ".repeat(state.lightsStage).trim();
-      } else if (state.lightsStage === 4 && !state.winner) {
-        middleHud.textContent = "GO!";
-      } else if (state.winner) {
-        middleHud.textContent = "Race finished";
-      }
-    }
-
-    // Main loop
-    let lastTime = performance.now();
-
-    function loop(now) {
-      const dt = (now - lastTime) / 1000;
-      lastTime = now;
-
-      updateLights(dt);
-
-      if (state.running && !state.winner) {
-        state.raceTime += dt;
-
-        updateCar(
-          car1,
-          {
-            up: keys.ArrowUp,
-            down: keys.ArrowDown,
-            left: keys.ArrowLeft,
-            right: keys.ArrowRight
-          },
-          dt
-        );
-        updateCar(
-          car2,
-          {
-            up: keys.KeyW,
-            down: keys.KeyS,
-            left: keys.KeyA,
-            right: keys.KeyD
-          },
-          dt
-        );
-
-        updateLap(car1, dt);
-        updateLap(car2, dt);
-      }
-
-      // Draw
-      ctx.clearRect(0, 0, W, H);
-      drawTrack();
-      drawCar(car1);
-      drawCar(car2);
-
-      // Update HUD
-      p1Hud.textContent =
-        "P1 Lap: " +
-        car1.lap +
-        "/" +
-        track.lapsToWin +
-        " | Time: " +
-        formatTime(car1.currentLapTime);
-
-      p2Hud.textContent =
-        "P2 Lap: " +
-        car2.lap +
-        "/" +
-        track.lapsToWin +
-        " | Time: " +
-        formatTime(car2.currentLapTime);
-
-      requestAnimationFrame(loop);
-    }
-
-    // Start loop
-    requestAnimationFrame(loop);
-  </script>
+<div id="info">WASD to drive • Space to brake</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+
+<script>
+// --------------------------------------------------
+// Scene Setup
+// --------------------------------------------------
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 2000);
+camera.position.set(0, 5, -10);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+// --------------------------------------------------
+// Lighting
+// --------------------------------------------------
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(50, 100, -20);
+sun.castShadow = true;
+scene.add(sun);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+
+// --------------------------------------------------
+// Ground
+// --------------------------------------------------
+const groundGeo = new THREE.PlaneGeometry(2000, 2000);
+const groundMat = new THREE.MeshLambertMaterial({ color: 0x228833 });
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// --------------------------------------------------
+// Figure‑8 Track
+// --------------------------------------------------
+function createFigure8() {
+  const curve = new THREE.CurvePath();
+
+  const loop1 = new THREE.EllipseCurve(0, 20, 30, 15, 0, Math.PI*2, false);
+  const loop2 = new THREE.EllipseCurve(0, -20, 30, 15, 0, Math.PI*2, false);
+
+  curve.add(new THREE.CatmullRomCurve3(loop1.getSpacedPoints(50).map(p => new THREE.Vector3(p.x, 0, p.y))));
+  curve.add(new THREE.CatmullRomCurve3(loop2.getSpacedPoints(50).map(p => new THREE.Vector3(p.x, 0, p.y))));
+
+  const shape = new THREE.Shape();
+  const w = 4;
+  shape.moveTo(-w, -1);
+  shape.lineTo(w, -1);
+  shape.lineTo(w, 1);
+  shape.lineTo(-w, 1);
+
+  const extrude = new THREE.ExtrudeGeometry(shape, {
+    steps: 200,
+    bevelEnabled: false,
+    extrudePath: curve
+  });
+
+  const mat = new THREE.MeshLambertMaterial({ color: 0x333333 });
+  const mesh = new THREE.Mesh(extrude, mat);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return { mesh, curve };
+}
+
+const { mesh: track, curve: trackCurve } = createFigure8();
+scene.add(track);
+
+// --------------------------------------------------
+// Kart
+// --------------------------------------------------
+const kart = new THREE.Group();
+
+// Body
+const bodyGeo = new THREE.BoxGeometry(1.5, 0.6, 2.5);
+const bodyMat = new THREE.MeshLambertMaterial({ color: 0xff3333 });
+const body = new THREE.Mesh(bodyGeo, bodyMat);
+body.castShadow = true;
+kart.add(body);
+
+// Wheels
+function wheel(x, z) {
+  const geo = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+  const mat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+  const w = new THREE.Mesh(geo, mat);
+  w.rotation.z = Math.PI/2;
+  w.position.set(x, -0.3, z);
+  w.castShadow = true;
+  return w;
+}
+kart.add(wheel(0.8, 1));
+kart.add(wheel(-0.8, 1));
+kart.add(wheel(0.8, -1));
+kart.add(wheel(-0.8, -1));
+
+kart.position.set(0, 0.5, 25);
+scene.add(kart);
+
+// --------------------------------------------------
+// Controls
+// --------------------------------------------------
+const keys = {};
+window.addEventListener("keydown", e => keys[e.code] = true);
+window.addEventListener("keyup", e => keys[e.code] = false);
+
+let speed = 0;
+let angle = Math.PI;
+
+// --------------------------------------------------
+// Animation Loop
+// --------------------------------------------------
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Movement
+  const accel = 0.08;
+  const maxSpeed = 1.2;
+  const turnSpeed = 0.03;
+
+  if (keys["KeyW"]) speed = Math.min(maxSpeed, speed + accel);
+  if (keys["KeyS"]) speed = Math.max(-maxSpeed * 0.5, speed - accel);
+  if (keys["Space"]) speed *= 0.85;
+
+  speed *= 0.98; // friction
+
+  if (keys["KeyA"]) angle += turnSpeed * (speed / maxSpeed);
+  if (keys["KeyD"]) angle -= turnSpeed * (speed / maxSpeed);
+
+  kart.position.x += Math.sin(angle) * speed;
+  kart.position.z += Math.cos(angle) * speed;
+  kart.rotation.y = angle;
+
+  // Chase Camera
+  const camOffset = new THREE.Vector3(0, 4, -8).applyAxisAngle(new THREE.Vector3(0,1,0), angle);
+  camera.position.copy(kart.position).add(camOffset);
+  camera.lookAt(kart.position);
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// --------------------------------------------------
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
 </body>
 </html>
