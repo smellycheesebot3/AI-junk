@@ -1,586 +1,448 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Jumping dick man</title>
+    <title>CodeChat – Chat by Room Code</title>
     <style>
+        * { box-sizing: border-box; font-family: system-ui, sans-serif; }
         body {
             margin: 0;
-            background: #000;
-            overflow: hidden;
-        }
-        canvas {
-            display: block;
-            width: 100vw;
+            background: #111827;
+            color: #e5e7eb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             height: 100vh;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
+        }
+        .app {
+            background: #020617;
+            border-radius: 10px;
+            width: 900px;
+            max-width: 95vw;
+            height: 520px;
+            display: flex;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            border: 1px solid #1f2937;
+        }
+        .sidebar {
+            width: 260px;
+            border-right: 1px solid #1f2937;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: radial-gradient(circle at top, #0f172a 0, #020617 55%);
+        }
+        .sidebar h1 {
+            font-size: 22px;
+            margin: 0 0 4px;
+        }
+        .sidebar p {
+            font-size: 13px;
+            margin: 0;
+            color: #9ca3af;
+        }
+        .label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #9ca3af;
+        }
+        .input-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        input[type="text"] {
+            background: #020617;
+            border-radius: 6px;
+            border: 1px solid #374151;
+            padding: 6px 8px;
+            color: #f9fafb;
+            font-size: 14px;
+            width: 100%;
+            outline: none;
+        }
+        input[type="text"]:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 1px #3b82f6;
+        }
+        button {
+            border-radius: 6px;
+            border: none;
+            padding: 6px 10px;
+            font-size: 13px;
+            cursor: pointer;
+            background: #2563eb;
+            color: #f9fafb;
+            white-space: nowrap;
+        }
+        button.secondary {
+            background: #111827;
+            border: 1px solid #374151;
+            color: #e5e7eb;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+        .status-box {
+            margin-top: 10px;
+            border-radius: 6px;
+            border: 1px solid #1f2937;
+            padding: 8px;
+            background: #020617;
+            font-size: 13px;
+        }
+        .status-label {
+            font-weight: 600;
+            color: #9ca3af;
+        }
+        .status-value {
+            color: #f9fafb;
+        }
+        .hint {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 10px;
+            line-height: 1.4;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            border-bottom: 1px solid #1f2937;
+            padding: 12px 16px;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+        }
+        .chat-header-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .chat-header-room {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+        .chat-header-user {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 12px 16px 0;
+            overflow-y: auto;
+            background: radial-gradient(circle at top, #020617 0, #020617 40%, #020617 80%);
+        }
+        .message {
+            margin-bottom: 8px;
+            max-width: 70%;
+            padding: 8px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        .message.self {
+            margin-left: auto;
+            background: #1d4ed8;
+        }
+        .message.other {
+            background: #111827;
+            border: 1px solid #1f2937;
+        }
+        .message-meta {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-bottom: 2px;
+        }
+        .message-self-meta {
+            text-align: right;
+        }
+
+        .system {
+            text-align: center;
+            font-size: 11px;
+            color: #6b7280;
+            margin: 6px 0;
+        }
+
+        .chat-input-row {
+            border-top: 1px solid #1f2937;
+            padding: 10px 12px;
+            display: flex;
+            gap: 8px;
+            background: #020617;
+        }
+        .chat-input-row input[type="text"] {
+            background: #020617;
+        }
+        .chat-input-row button {
+            padding: 8px 14px;
+        }
+
+        .disabled-overlay {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top, rgba(15,23,42,0.7), rgba(15,23,42,0.95));
+            display: none;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .disabled-overlay.active {
+            display: flex;
+        }
+        .disabled-overlay-inner {
+            max-width: 320px;
+            color: #e5e7eb;
+            font-size: 14px;
+            line-height: 1.5;
         }
     </style>
 </head>
 <body>
-<canvas id="game" width="320" height="180"></canvas>
+<div class="app">
+    <div class="sidebar">
+        <div>
+            <h1>CodeChat</h1>
+            <p>Join a chat room by entering the same code as your friends.</p>
+        </div>
+
+        <div>
+            <div class="label">Your name</div>
+            <input type="text" id="usernameInput" placeholder="e.g. Alex" maxlength="20">
+        </div>
+
+        <div>
+            <div class="label">Room code</div>
+            <div class="input-row">
+                <input type="text" id="roomInput" placeholder="e.g. MATH-ROOM" maxlength="20">
+                <button id="joinBtn">Join</button>
+            </div>
+            <button id="leaveBtn" class="secondary" style="margin-top:6px;" disabled>Leave</button>
+        </div>
+
+        <div class="status-box">
+            <div class="status-label">Status</div>
+            <div class="status-value" id="statusText">Not in a room</div>
+        </div>
+
+        <div class="hint">
+            Open this page in another tab or browser, type the
+            <strong>same room code</strong> and you can chat using local storage.
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="chat-header">
+            <div>
+                <div class="chat-header-title">Room</div>
+                <div class="chat-header-room" id="roomNameLabel">None</div>
+            </div>
+            <div class="chat-header-user" id="userLabel">You: (not set)</div>
+        </div>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="chat-input-row">
+            <input type="text" id="messageInput" placeholder="Type your message..." maxlength="500" disabled>
+            <button id="sendBtn" disabled>Send</button>
+        </div>
+
+        <div class="disabled-overlay" id="overlay">
+            <div class="disabled-overlay-inner">
+                Enter a <strong>name</strong> and a <strong>room code</strong> on the left, then click <strong>Join</strong> to start chatting.
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
-// =========================
-// BASIC SETUP
-// =========================
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
+(function () {
+    const usernameInput = document.getElementById('usernameInput');
+    const roomInput = document.getElementById('roomInput');
+    const joinBtn = document.getElementById('joinBtn');
+    const leaveBtn = document.getElementById('leaveBtn');
+    const statusText = document.getElementById('statusText');
+    const roomNameLabel = document.getElementById('roomNameLabel');
+    const userLabel = document.getElementById('userLabel');
+    const messagesEl = document.getElementById('messages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const overlay = document.getElementById('overlay');
 
-const TILE = 16;
-const GRAVITY = 0.4;
-const JUMP_FORCE = -7;
-const MOVE_SPEED = 1.8;
-const FRICTION = 0.8;
+    let currentRoom = null;
+    let username = '';
 
-let keys = {};
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
-
-// =========================
-// WORLD DATA (TILEMAP)
-// =========================
-// Legend:
-// 0 empty
-// 1 ground
-// 2 brick
-// 3 question block (coin)
-// 4 pipe top-left
-// 5 pipe top-right
-// 6 pipe body-left
-// 7 pipe body-right
-// 8 flagpole
-// 9 flag top
-// power-ups & enemies placed separately
-
-const levelWidth = 120; // in tiles
-const levelHeight = 12;
-
-let map = [];
-for (let y = 0; y < levelHeight; y++) {
-    map[y] = [];
-    for (let x = 0; x < levelWidth; x++) {
-        map[y][x] = 0;
-    }
-}
-
-// Build simple terrain
-for (let x = 0; x < levelWidth; x++) {
-    // ground
-    map[10][x] = 1;
-    map[11][x] = 1;
-}
-
-// Some platforms and blocks
-function setTile(x, y, v) {
-    if (x >= 0 && x < levelWidth && y >= 0 && y < levelHeight) {
-        map[y][x] = v;
-    }
-}
-
-// Bricks and question blocks
-for (let x = 15; x < 22; x++) setTile(x, 6, 2);
-setTile(18, 5, 3);
-setTile(19, 5, 2);
-setTile(20, 5, 3);
-
-for (let x = 30; x < 36; x++) setTile(x, 7, 2);
-setTile(32, 4, 3);
-setTile(33, 4, 3);
-
-// Pipes
-function makePipe(baseX, topRow, heightTiles) {
-    setTile(baseX, topRow, 4);
-    setTile(baseX + 1, topRow, 5);
-    for (let y = topRow + 1; y < topRow + heightTiles; y++) {
-        setTile(baseX, y, 6);
-        setTile(baseX + 1, y, 7);
-    }
-}
-makePipe(40, 7, 3);
-makePipe(50, 6, 4);
-makePipe(70, 5, 5);
-
-// Flagpole at the end
-const flagX = levelWidth - 5;
-for (let y = 2; y < 10; y++) setTile(flagX, y, 8);
-setTile(flagX, 1, 9);
-
-// =========================
-// PLAYER
-// =========================
-const player = {
-    x: 3 * TILE,
-    y: 8 * TILE,
-    w: 12,
-    h: 16,
-    vx: 0,
-    vy: 0,
-    grounded: false,
-    big: false,
-    dead: false,
-    win: false
-};
-
-// Player animation
-let pState = "idle"; // idle, run, jump
-let pFrame = 0;
-let pFrameTimer = 0;
-
-// =========================
-// ENTITIES
-// =========================
-let enemies = [];
-let powerUps = [];
-let coins = 0;
-
-// Goomba-like enemies
-function spawnGoomba(tx, ty) {
-    enemies.push({
-        type: "goomba",
-        x: tx * TILE,
-        y: ty * TILE,
-        w: 14,
-        h: 14,
-        vx: -0.5,
-        vy: 0,
-        alive: true,
-        squished: false,
-        frame: 0,
-        frameTimer: 0
-    });
-}
-
-spawnGoomba(20, 9);
-spawnGoomba(26, 9);
-spawnGoomba(45, 9);
-spawnGoomba(60, 9);
-spawnGoomba(80, 9);
-
-// Power-ups (mushrooms)
-function spawnMushroom(tx, ty) {
-    powerUps.push({
-        type: "mushroom",
-        x: tx * TILE,
-        y: ty * TILE,
-        w: 12,
-        h: 12,
-        vx: 0.6,
-        vy: 0,
-        active: true
-    });
-}
-
-// One hidden mushroom
-spawnMushroom(32, 3);
-
-// =========================
-// CAMERA
-// =========================
-let cameraX = 0;
-
-// =========================
-// UTILS
-// =========================
-function worldToTile(x, y) {
-    return {
-        tx: Math.floor(x / TILE),
-        ty: Math.floor(y / TILE)
-    };
-}
-
-function getTile(tx, ty) {
-    if (tx < 0 || tx >= levelWidth || ty < 0 || ty >= levelHeight) return 0;
-    return map[ty][tx];
-}
-
-function isSolidTile(id) {
-    return id === 1 || id === 2 || id === 3 || (id >= 4 && id <= 8);
-}
-
-// =========================
-// GAME LOOP
-// =========================
-function update() {
-    if (player.dead || player.win) {
-        // Simple restart on Enter
-        if (keys["Enter"]) location.reload();
-        return;
+    function normalizeCode(code) {
+        return code.trim().toUpperCase().replace(/\s+/g, '-');
     }
 
-    // ----- PLAYER INPUT -----
-    let moving = false;
-    if (keys["ArrowRight"] || keys["d"]) {
-        player.vx += MOVE_SPEED * 0.3;
-        moving = true;
-    }
-    if (keys["ArrowLeft"] || keys["a"]) {
-        player.vx -= MOVE_SPEED * 0.3;
-        moving = true;
+    function getRoomKey(code) {
+        return 'codechat-room-' + code;
     }
 
-    player.vx *= FRICTION;
-    if (player.vx > MOVE_SPEED) player.vx = MOVE_SPEED;
-    if (player.vx < -MOVE_SPEED) player.vx = -MOVE_SPEED;
-
-    // Jump
-    if ((keys[" "] || keys["ArrowUp"] || keys["w"]) && player.grounded) {
-        player.vy = JUMP_FORCE;
-        player.grounded = false;
-    }
-
-    // Gravity
-    player.vy += GRAVITY;
-    if (player.vy > 8) player.vy = 8;
-
-    // ----- PLAYER COLLISION -----
-    moveEntityWithCollision(player);
-
-    // Update player state
-    if (!player.grounded) {
-        pState = "jump";
-    } else if (Math.abs(player.vx) > 0.2 && moving) {
-        pState = "run";
-    } else {
-        pState = "idle";
-    }
-
-    // Animation
-    pFrameTimer++;
-    if (pFrameTimer > 8) {
-        pFrameTimer = 0;
-        if (pState === "idle") pFrame = (pFrame + 1) % 2;
-        if (pState === "run") pFrame = (pFrame + 1) % 4;
-        if (pState === "jump") pFrame = 0;
-    }
-
-    // ----- ENEMIES -----
-    enemies.forEach(e => {
-        if (!e.alive) return;
-
-        e.vy += GRAVITY;
-        moveEntityWithCollision(e, true);
-
-        // Simple AI: reverse on wall
-        const frontX = e.vx > 0 ? e.x + e.w + 1 : e.x - 1;
-        const footY = e.y + e.h - 1;
-        let { tx, ty } = worldToTile(frontX, footY);
-        if (isSolidTile(getTile(tx, ty))) {
-            e.vx *= -1;
-        }
-
-        // Animation
-        e.frameTimer++;
-        if (e.frameTimer > 10) {
-            e.frameTimer = 0;
-            e.frame = (e.frame + 1) % 2;
-        }
-    });
-
-    // Enemy vs player
-    enemies.forEach(e => {
-        if (!e.alive) return;
-        if (rectIntersect(player, e)) {
-            if (player.vy > 0 && player.y + player.h - e.y < 10) {
-                // Stomp
-                e.alive = false;
-                e.squished = true;
-                player.vy = JUMP_FORCE * 0.6;
-            } else {
-                // Hurt
-                if (player.big) {
-                    player.big = false;
-                    player.vy = JUMP_FORCE * 0.7;
-                } else {
-                    player.dead = true;
-                }
-            }
-        }
-    });
-
-    // ----- POWER-UPS -----
-    powerUps.forEach(p => {
-        if (!p.active) return;
-        p.vy += GRAVITY;
-        moveEntityWithCollision(p, false);
-        if (rectIntersect(player, p)) {
-            p.active = false;
-            player.big = true;
-        }
-    });
-
-    // ----- QUESTION BLOCKS, BRICKS, COIN LOGIC -----
-    handleBlockHits();
-
-    // ----- FLAG / WIN -----
-    const playerTile = worldToTile(player.x + player.w / 2, player.y + player.h / 2);
-    const t = getTile(playerTile.tx, playerTile.ty);
-    if (t === 8 || t === 9) {
-        player.win = true;
-    }
-
-    // ----- CAMERA -----
-    cameraX = player.x - canvas.width / 2;
-    if (cameraX < 0) cameraX = 0;
-    const maxCam = levelWidth * TILE - canvas.width;
-    if (cameraX > maxCam) cameraX = maxCam;
-
-    // Fall death
-    if (player.y > canvas.height + 100) player.dead = true;
-}
-
-function moveEntityWithCollision(ent, enemy = false) {
-    // Horizontal
-    ent.x += ent.vx;
-    let { tx: left, ty: top } = worldToTile(ent.x, ent.y);
-    let { tx: right, ty: bottom } = worldToTile(ent.x + ent.w, ent.y + ent.h);
-
-    for (let y = top; y <= bottom; y++) {
-        for (let x = left; x <= right; x++) {
-            const tile = getTile(x, y);
-            if (isSolidTile(tile)) {
-                if (ent.vx > 0) {
-                    ent.x = x * TILE - ent.w - 0.01;
-                } else if (ent.vx < 0) {
-                    ent.x = (x + 1) * TILE + 0.01;
-                }
-                ent.vx = enemy ? -ent.vx : 0;
-            }
+    function loadRoomMessages(code) {
+        const json = localStorage.getItem(getRoomKey(code));
+        if (!json) return [];
+        try {
+            return JSON.parse(json);
+        } catch {
+            return [];
         }
     }
 
-    // Vertical
-    ent.y += ent.vy;
-    ({ tx: left, ty: top } = worldToTile(ent.x, ent.y));
-    ({ tx: right, ty: bottom } = worldToTile(ent.x + ent.w, ent.y + ent.h));
-
-    let onGround = false;
-
-    for (let y = top; y <= bottom; y++) {
-        for (let x = left; x <= right; x++) {
-            const tile = getTile(x, y);
-            if (isSolidTile(tile)) {
-                if (ent.vy > 0) {
-                    ent.y = y * TILE - ent.h - 0.01;
-                    ent.vy = 0;
-                    onGround = true;
-                } else if (ent.vy < 0) {
-                    ent.y = (y + 1) * TILE + 0.01;
-                    ent.vy = 0;
-                }
-            }
-        }
+    function saveRoomMessages(code, messages) {
+        localStorage.setItem(getRoomKey(code), JSON.stringify(messages));
     }
 
-    if (ent === player) {
-        player.grounded = onGround;
-        if (player.big) {
-            player.h = 24;
-        } else {
-            player.h = 16;
-        }
-    }
-}
-
-function rectIntersect(a, b) {
-    return !(
-        a.x + a.w < b.x ||
-        a.x > b.x + b.w ||
-        a.y + a.h < b.y ||
-        a.y > b.y + b.h
-    );
-}
-
-// Handle blocks hit from below by player
-function handleBlockHits() {
-    if (!(keys[" "] || keys["ArrowUp"] || keys["w"])) return;
-    if (player.vy >= 0) return; // only when going up
-
-    const headX = player.x + player.w / 2;
-    const headY = player.y;
-    const { tx, ty } = worldToTile(headX, headY - 1);
-    const tile = getTile(tx, ty);
-
-    if (tile === 2 || tile === 3) {
-        // Make the player bump slightly
-        player.vy = 1;
-
-        // Brick
-        if (tile === 2) {
-            if (player.big) {
-                // break brick
-                setTile(tx, ty, 0);
-            } else {
-                // just bump
-            }
-        }
-
-        // Question block with coin
-        if (tile === 3) {
-            coins++;
-            setTile(tx, ty, 0);
-        }
-    }
-}
-
-// =========================
-// RENDER
-// =========================
-function draw() {
-    ctx.fillStyle = "#5cd0ff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    ctx.translate(-cameraX, 0);
-
-    // Background hills (simple)
-    ctx.fillStyle = "#57b35c";
-    ctx.fillRect(20, 120, 60, 40);
-    ctx.fillRect(80, 110, 80, 50);
-    ctx.fillRect(200, 115, 70, 45);
-
-    // Tiles
-    for (let y = 0; y < levelHeight; y++) {
-        for (let x = 0; x < levelWidth; x++) {
-            const t = map[y][x];
-            const px = x * TILE;
-            const py = y * TILE;
-
-            if (t === 1) {
-                ctx.fillStyle = "#8b4513";
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = "#a06030";
-                ctx.fillRect(px, py + 10, TILE, 6);
-            } else if (t === 2) {
-                ctx.fillStyle = "#b06030";
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = "#d08040";
-                ctx.fillRect(px + 2, py + 2, 12, 4);
-                ctx.fillRect(px + 2, py + 8, 12, 4);
-            } else if (t === 3) {
-                ctx.fillStyle = "#d0a030";
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = "#fff6a0";
-                ctx.fillRect(px + 4, py + 4, 8, 2);
-                ctx.fillRect(px + 4, py + 8, 8, 2);
-            } else if (t === 4 || t === 5 || t === 6 || t === 7) {
-                // Pipes
-                ctx.fillStyle = "#2ea03f";
-                ctx.fillRect(px, py, TILE, TILE);
-                ctx.fillStyle = "#3ccf52";
-                ctx.fillRect(px + 2, py + 2, TILE - 4, TILE - 4);
-            } else if (t === 8) {
-                // Flagpole
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(px + 7, py, 2, TILE);
-            } else if (t === 9) {
-                // Flag top
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(px + 7, py, 2, TILE);
-                ctx.fillStyle = "#ff3030";
-                ctx.fillRect(px + 9, py + 2, 10, 6);
-            }
-        }
-    }
-
-    // Power-ups
-    powerUps.forEach(p => {
-        if (!p.active) return;
-        ctx.fillStyle = "#ff0000";
-        ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(p.x + 3, p.y + 3, 2, 2);
-        ctx.fillRect(p.x + 7, p.y + 3, 2, 2);
-    });
-
-    // Enemies
-    enemies.forEach(e => {
-        if (!e.alive && !e.squished) return;
-
-        if (e.squished) {
-            ctx.fillStyle = "#7a3b00";
-            ctx.fillRect(e.x, e.y + e.h - 6, e.w, 6);
+    function appendMessageToUI(msg, isSelf) {
+        const wrapper = document.createElement('div');
+        if (msg.type === 'system') {
+            wrapper.className = 'system';
+            wrapper.textContent = msg.text;
+            messagesEl.appendChild(wrapper);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
             return;
         }
 
-        if (e.type === "goomba") {
-            ctx.fillStyle = "#a0522d";
-            if (e.frame === 0) {
-                ctx.fillRect(e.x, e.y, e.w, e.h);
-            } else {
-                ctx.fillRect(e.x, e.y + 1, e.w, e.h - 1);
-            }
-            ctx.fillStyle = "#000000";
-            ctx.fillRect(e.x + 3, e.y + 4, 2, 2);
-            ctx.fillRect(e.x + 9, e.y + 4, 2, 2);
+        wrapper.className = 'message ' + (isSelf ? 'self' : 'other');
+
+        const meta = document.createElement('div');
+        meta.className = 'message-meta ' + (isSelf ? 'message-self-meta' : '');
+        meta.textContent = `${msg.sender} • ${msg.time}`;
+        const text = document.createElement('div');
+        text.textContent = msg.text;
+
+        wrapper.appendChild(meta);
+        wrapper.appendChild(text);
+        messagesEl.appendChild(wrapper);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function renderRoomHistory(code) {
+        messagesEl.innerHTML = '';
+        const msgs = loadRoomMessages(code);
+        msgs.forEach(m => appendMessageToUI(m, m.sender === username));
+    }
+
+    function addSystemMessage(code, text) {
+        const msgs = loadRoomMessages(code);
+        const msg = {
+            type: 'system',
+            text,
+            time: new Date().toLocaleTimeString()
+        };
+        msgs.push(msg);
+        saveRoomMessages(code, msgs);
+        // Trigger storage event in other tabs
+        localStorage.setItem('codechat-last-update', Date.now().toString());
+        appendMessageToUI(msg, false);
+    }
+
+    function sendChatMessage() {
+        if (!currentRoom) return;
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        const msgs = loadRoomMessages(currentRoom);
+        const msg = {
+            type: 'user',
+            sender: username,
+            text,
+            time: new Date().toLocaleTimeString()
+        };
+        msgs.push(msg);
+        saveRoomMessages(currentRoom, msgs);
+        // notify other tabs
+        localStorage.setItem('codechat-last-update', Date.now().toString());
+        appendMessageToUI(msg, true);
+        messageInput.value = '';
+    }
+
+    function joinRoom() {
+        const nameVal = usernameInput.value.trim();
+        let roomVal = roomInput.value;
+        if (!nameVal || !roomVal) return;
+
+        username = nameVal;
+        roomVal = normalizeCode(roomVal);
+        currentRoom = roomVal;
+
+        usernameInput.disabled = true;
+        roomInput.disabled = true;
+        joinBtn.disabled = true;
+        leaveBtn.disabled = false;
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        overlay.classList.remove('active');
+
+        statusText.textContent = 'In room ' + roomVal;
+        roomNameLabel.textContent = roomVal;
+        userLabel.textContent = 'You: ' + username;
+
+        renderRoomHistory(roomVal);
+        addSystemMessage(roomVal, username + ' joined the room');
+    }
+
+    function leaveRoom() {
+        if (!currentRoom) return;
+        addSystemMessage(currentRoom, username + ' left the room');
+
+        currentRoom = null;
+        usernameInput.disabled = false;
+        roomInput.disabled = false;
+        joinBtn.disabled = false;
+        leaveBtn.disabled = true;
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        overlay.classList.add('active');
+
+        statusText.textContent = 'Not in a room';
+        roomNameLabel.textContent = 'None';
+        userLabel.textContent = 'You: (not set)';
+        messagesEl.innerHTML = '';
+    }
+
+    // Events
+    joinBtn.addEventListener('click', joinRoom);
+    leaveBtn.addEventListener('click', leaveRoom);
+
+    roomInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') joinRoom();
+    });
+    usernameInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') joinRoom();
+    });
+    messageInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    });
+    sendBtn.addEventListener('click', sendChatMessage);
+
+    // Listen for changes from other tabs
+    window.addEventListener('storage', e => {
+        if (!currentRoom) return;
+        if (e.key === getRoomKey(currentRoom) || e.key === 'codechat-last-update') {
+            const msgs = loadRoomMessages(currentRoom);
+            messagesEl.innerHTML = '';
+            msgs.forEach(m => appendMessageToUI(m, m.sender === username));
         }
     });
 
-    // Player
-    drawPlayer();
-
-    ctx.restore();
-
-    // HUD
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText("Coins: " + coins, 10, 10);
-    ctx.fillText("Big: " + (player.big ? "YES" : "NO"), 10, 20);
-
-    if (player.dead) {
-        ctx.fillStyle = "#000000aa";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText("YOU DIED - Press Enter", 90, 90);
-    }
-    if (player.win) {
-        ctx.fillStyle = "#000000aa";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText("YOU WIN! - Press Enter", 90, 90);
-    }
-}
-
-function drawPlayer() {
-    const x = player.x;
-    const y = player.y;
-
-    ctx.fillStyle = "#ffcc66";
-
-    const bodyHeight = player.big ? 24 : 16;
-
-    if (pState === "idle") {
-        if (pFrame === 0) {
-            ctx.fillRect(x, y, 12, bodyHeight);
-        } else {
-            ctx.fillRect(x, y + 1, 12, bodyHeight - 1);
-        }
-    } else if (pState === "run") {
-        if (pFrame === 0 || pFrame === 2) {
-            ctx.fillRect(x, y, 12, bodyHeight);
-        } else {
-            ctx.fillRect(x, y + 1, 12, bodyHeight - 1);
-        }
-    } else if (pState === "jump") {
-        ctx.fillRect(x, y, 12, bodyHeight);
-    }
-
-    // Hat
-    ctx.fillStyle = "#ff0000";
-    ctx.fillRect(x, y - 4, 12, 4);
-}
-
-// =========================
-// MAIN LOOP
-// =========================
-function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
-}
-
-loop();
+    // Initial overlay
+    overlay.classList.add('active');
+})();
 </script>
 </body>
 </html>
