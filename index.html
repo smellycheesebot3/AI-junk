@@ -114,7 +114,7 @@ function update() {
     if (keys["ArrowLeft"]) player.x -= MOVE_SPEED;
 
     // Jump
-    if (keys["Space"] && player.grounded) {
+    if (keys["Up Arrow"] && player.grounded) {
         player.vy = JUMP_FORCE;
         player.grounded = false;
     }
