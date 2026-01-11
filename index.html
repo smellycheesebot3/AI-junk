@@ -1,3 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Three.js WASD Test</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+    </style>
+
+    <!-- Three.js -->
+    <script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
+
+    <!-- OrbitControls -->
+    <script src="https://unpkg.com/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+<script>
+// ===================== ERROR DISPLAY =====================
 window.onerror = function (msg, url, line, col, error) {
     document.body.innerHTML =
         "<div style='padding:20px;font-size:20px;color:white;background:black;'>" +
@@ -10,18 +29,8 @@ window.onerror = function (msg, url, line, col, error) {
         error +
         "</div>";
 };
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Three.js Test</title>
-    <style>
-        body { margin: 0; overflow: hidden; }
-    </style>
-    <script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
-</head>
-<body>
-<script>
+
+// ===================== SCENE =====================
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
@@ -34,31 +43,26 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(150, 120, 250);
 
+// ===================== RENDERER =====================
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
 // ===================== ORBIT CONTROLS =====================
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
-controls.rotateSpeed = 0.7;
-controls.zoomSpeed = 1.0;
-controls.panSpeed = 0.8;
-
-// Focus on center of town
 controls.target.set(0, 20, 0);
 
 // ===================== WASD MOVEMENT =====================
-const keys = {
-    w: false,
-    a: false,
-    s: false,
-    d: false
-};
+const keys = { w: false, a: false, s: false, d: false };
 
-document.addEventListener("keydown", (e) => {
+document.addEventListener("keydown", e => {
     const k = e.key.toLowerCase();
     if (keys[k] !== undefined) keys[k] = true;
 });
 
-document.addEventListener("keyup", (e) => {
+document.addEventListener("keyup", e => {
     const k = e.key.toLowerCase();
     if (keys[k] !== undefined) keys[k] = false;
 });
@@ -67,28 +71,16 @@ function updateMovement() {
     const speed = 2.0;
 
     // Forward/backward
-    if (keys.w) {
-        camera.position.add(
-            controls.getDirection(new THREE.Vector3()).multiplyScalar(speed)
-        );
-    }
-    if (keys.s) {
-        camera.position.add(
-            controls.getDirection(new THREE.Vector3()).multiplyScalar(-speed)
-        );
-    }
+    if (keys.w) camera.position.add(controls.getDirection(new THREE.Vector3()).multiplyScalar(speed));
+    if (keys.s) camera.position.add(controls.getDirection(new THREE.Vector3()).multiplyScalar(-speed));
 
-    // Left/right strafing
+    // Left/right
     const right = new THREE.Vector3();
     controls.getDirection(right);
     right.cross(camera.up);
 
-    if (keys.a) {
-        camera.position.add(right.multiplyScalar(-speed));
-    }
-    if (keys.d) {
-        camera.position.add(right.multiplyScalar(speed));
-    }
+    if (keys.a) camera.position.add(right.multiplyScalar(-speed));
+    if (keys.d) camera.position.add(right.multiplyScalar(speed));
 }
 
 // ===================== ANIMATION LOOP =====================
@@ -99,3 +91,7 @@ function animate() {
     renderer.render(scene, camera);
 }
 animate();
+</script>
+
+</body>
+</html>
