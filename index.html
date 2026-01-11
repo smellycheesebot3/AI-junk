@@ -6,13 +6,13 @@
     <style>
         body { margin: 0; overflow: hidden; }
     </style>
+
+    <!-- Three.js (non‑module version, always works) -->
+    <script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
 </head>
 <body>
 
-<script type="module">
-import * as THREE from "https://unpkg.com/three@0.152.2/build/three.module.js";
-import { OrbitControls } from "https://unpkg.com/three@0.152.2/examples/jsm/controls/OrbitControls.js";
-
+<script>
 // ===================== ERROR DISPLAY =====================
 window.onerror = function (msg, url, line, col, error) {
     document.body.innerHTML =
@@ -38,18 +38,20 @@ const camera = new THREE.PerspectiveCamera(
     0.1,
     2000
 );
-camera.position.set(150, 120, 250);
+camera.position.set(0, 20, 50);
 
 // ===================== RENDERER =====================
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// ===================== ORBIT CONTROLS =====================
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.target.set(0, 20, 0);
+// ===================== SIMPLE FLOOR =====================
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(500, 500),
+    new THREE.MeshBasicMaterial({ color: 0x228B22 })
+);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
 
 // ===================== WASD MOVEMENT =====================
 const keys = { w: false, a: false, s: false, d: false };
@@ -65,30 +67,24 @@ document.addEventListener("keyup", e => {
 });
 
 function updateMovement() {
-    const speed = 2.0;
+    const speed = 1.0;
 
     // Forward/backward
-    if (keys.w) camera.position.add(controls.getDirection(new THREE.Vector3()).multiplyScalar(speed));
-    if (keys.s) camera.position.add(controls.getDirection(new THREE.Vector3()).multiplyScalar(-speed));
+    if (keys.w) camera.position.z -= speed;
+    if (keys.s) camera.position.z += speed;
 
     // Left/right
-    const right = new THREE.Vector3();
-    controls.getDirection(right);
-    right.cross(camera.up);
-
-    if (keys.a) camera.position.add(right.multiplyScalar(-speed));
-    if (keys.d) camera.position.add(right.multiplyScalar(speed));
+    if (keys.a) camera.position.x -= speed;
+    if (keys.d) camera.position.x += speed;
 }
 
 // ===================== ANIMATION LOOP =====================
 function animate() {
     requestAnimationFrame(animate);
     updateMovement();
-    controls.update();
     renderer.render(scene, camera);
 }
 animate();
-
 </script>
 
 </body>
