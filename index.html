@@ -1,15 +1,14 @@
 window.onerror = function (msg, url, line, col, error) {
-    document.body.innerHTML = `
-        <div style="padding:20px;font-size:20px;color:white;background:black;">
-            <b>JavaScript Error:</b><br>
-            ${msg}<br><br>
-            <b>Line:</b> ${line}<br>
-            <b>Column:</b> ${col}<br>
-            <b>URL:</b> ${url}<br><br>
-            <b>Details:</b><br>
-            ${error}
-        </div>
-    `;
+    document.body.innerHTML =
+        "<div style='padding:20px;font-size:20px;color:white;background:black;'>" +
+        "<b>JavaScript Error:</b><br>" +
+        msg + "<br><br>" +
+        "<b>Line:</b> " + line + "<br>" +
+        "<b>Column:</b> " + col + "<br>" +
+        "<b>URL:</b> " + url + "<br><br>" +
+        "<b>Details:</b><br>" +
+        error +
+        "</div>";
 };
 <!DOCTYPE html>
 <html>
