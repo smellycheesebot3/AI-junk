@@ -13,25 +13,77 @@
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-camera.position.set(0, 0, 50);
-
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-const cube = new THREE.Mesh(
-    new THREE.BoxGeometry(20, 20, 20),
-    new THREE.MeshBasicMaterial({ color: 0xff0000 })
+// ===================== CAMERA =====================
+const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    2000
 );
-scene.add(cube);
+camera.position.set(150, 120, 250);
 
+// ===================== ORBIT CONTROLS =====================
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.rotateSpeed = 0.7;
+controls.zoomSpeed = 1.0;
+controls.panSpeed = 0.8;
+
+// Focus on center of town
+controls.target.set(0, 20, 0);
+
+// ===================== WASD MOVEMENT =====================
+const keys = {
+    w: false,
+    a: false,
+    s: false,
+    d: false
+};
+
+document.addEventListener("keydown", (e) => {
+    const k = e.key.toLowerCase();
+    if (keys[k] !== undefined) keys[k] = true;
+});
+
+document.addEventListener("keyup", (e) => {
+    const k = e.key.toLowerCase();
+    if (keys[k] !== undefined) keys[k] = false;
+});
+
+function updateMovement() {
+    const speed = 2.0;
+
+    // Forward/backward
+    if (keys.w) {
+        camera.position.add(
+            controls.getDirection(new THREE.Vector3()).multiplyScalar(speed)
+        );
+    }
+    if (keys.s) {
+        camera.position.add(
+            controls.getDirection(new THREE.Vector3()).multiplyScalar(-speed)
+        );
+    }
+
+    // Left/right strafing
+    const right = new THREE.Vector3();
+    controls.getDirection(right);
+    right.cross(camera.up);
+
+    if (keys.a) {
+        camera.position.add(right.multiplyScalar(-speed));
+    }
+    if (keys.d) {
+        camera.position.add(right.multiplyScalar(speed));
+    }
+}
+
+// ===================== ANIMATION LOOP =====================
 function animate() {
     requestAnimationFrame(animate);
-    cube.rotation.y += 0.01;
+    updateMovement();
+    controls.update();
     renderer.render(scene, camera);
 }
 animate();
-</script>
-</body>
-</html>
