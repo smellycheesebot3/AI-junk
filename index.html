@@ -180,8 +180,8 @@ function createBrokenBuilding(x, z, w, h, d) {
 }
 
 // ===================== EXTRA BUILDING RINGS =====================
-for (let x = -180; x <= 180; x += 55) {
-    for (let z = -180; z <= 180; z += 55) {
+for (let x = -180; x <= 180; x += 45) {
+    for (let z = -180; z <= 180; z += 45) {
         if (!isOnStreet(x, z)) {
             createBrokenBuilding(
                 x, z,
@@ -194,8 +194,8 @@ for (let x = -180; x <= 180; x += 55) {
 }
 
 // Outskirts
-for (let x = -260; x <= 260; x += 75) {
-    for (let z = -260; z <= 260; z += 75) {
+for (let x = -260; x <= 260; x += 65) {
+    for (let z = -260; z <= 260; z += 65) {
         if (!isOnStreet(x, z)) {
             createBrokenBuilding(
                 x, z,
@@ -223,20 +223,20 @@ for (let i = 0; i < 80; i++) {
 }
 
 // Main street buildings
-for (let i = -120; i <= 120; i += 50) {
+for (let i = -120; i <= 120; i += 40) {
     createBrokenBuilding(i, -30, 25 + Math.random()*10, 15 + Math.random()*10, 25);
     createBrokenBuilding(i,  30, 25 + Math.random()*10, 15 + Math.random()*10, 25);
 }
 
 // Cross street buildings
-for (let i = -120; i <= 120; i += 50) {
+for (let i = -120; i <= 120; i += 40) {
     createBrokenBuilding(-30, i, 25, 15 + Math.random()*10, 25);
     createBrokenBuilding( 30, i, 25, 15 + Math.random()*10, 25);
 }
 
 // Fill city blocks
-for (let x = -100; x <= 100; x += 60) {
-    for (let z = -100; z <= 100; z += 60) {
+for (let x = -100; x <= 100; x += 50) {
+    for (let z = -100; z <= 100; z += 50) {
         if (!isOnStreet(x, z)) {
             createBrokenBuilding(
                 x, z,
