@@ -44,6 +44,12 @@ camera.position.set(0, 20, 50);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+    
+// ===================== RENDERER SETTINGS (IMPORTANT) =====================
+renderer.physicallyCorrectLights = true;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
 
 // ===================== FLOOR =====================
 const floor = new THREE.Mesh(
