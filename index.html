@@ -213,6 +213,49 @@ function createBrokenBuilding(x, z, w, h, d) {
     scene.add(rubble);
 }
 
+    function createBuilding(x, z, w, h, d) {
+    // Skip streets
+    if (isOnStreet(x, z)) return;
+
+    // Random variation
+    w *= 0.7 + Math.random() * 0.3;
+    h *= 0.6 + Math.random() * 0.4;
+    d *= 0.7 + Math.random() * 0.3;
+
+    // Choose a visible, warm Pompeii-style colour
+    const baseColor = new THREE.Color().setHSL(
+        0.07 + Math.random() * 0.02,   // warm hue
+        0.45 + Math.random() * 0.1,    // saturation
+        0.45 + Math.random() * 0.1     // brightness
+    );
+
+    // Light-reactive material (this is the important part)
+    const material = new THREE.MeshStandardMaterial({
+        color: baseColor,
+        roughness: 0.9,
+        metalness: 0.0
+    });
+
+    // Geometry
+    const building = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        material
+    );
+
+
+        
+    // Ensure normals exist
+    building.geometry.computeVertexNormals();
+
+    // Position
+    building.position.set(x, h / 2, z);
+
+    // Slight random tilt
+    building.rotation.y = (Math.random() - 0.5) * 0.1;
+
+    scene.add(building);
+}
+
 // ===================== LIGHTING (REQUIRED FOR REALISM) =====================
 const sun = new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(200, 300, 150);
