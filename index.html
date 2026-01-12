@@ -45,7 +45,10 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-scene.add(new THREE.AmbientLight(0xffffff, 1));
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(200, 300, 150);
+scene.add(sun);
+
 
 // ===================== FLOOR =====================
 const floor = new THREE.Mesh(
