@@ -53,7 +53,7 @@ const floor = new THREE.Mesh(
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
     
-    // ===================== STREETS =====================
+// ===================== STREETS =====================
 // Pompeii-style grey clay/basalt roads
 const streetMaterial = new THREE.MeshBasicMaterial({ color: 0x6e6e6e });
 
@@ -77,94 +77,156 @@ scene.add(street2);
 
 // ===================== STREET AVOIDANCE =====================
 function isOnStreet(x, z) {
-    const streetWidth = 20; // your streets are 20 units wide
+    const streetWidth = 20;
 
-    // Main street (horizontal, along z = 0)
     if (Math.abs(z) < streetWidth / 2) return true;
-
-    // Cross street (vertical, along x = 0)
     if (Math.abs(x) < streetWidth / 2) return true;
 
     return false;
 }
 
-// ===================== MORE REALISTIC / SMALLER POMPEII BUILDINGS =====================
+// ===================== TEXTURES =====================
+const texLoader = new THREE.TextureLoader();
+
+// Public‑domain textures
+const wallTex = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/plaster/plaster_01_diff_1k.jpg");
+const wallNorm = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/plaster/plaster_01_nor_gl_1k.png");
+const wallRough = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/plaster/plaster_01_rough_1k.jpg");
+
+const roofTex = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/roof_tiles/roof_tiles_02_diff_1k.jpg");
+const roofNorm = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/roof_tiles/roof_tiles_02_nor_gl_1k.png");
+
+const stoneTex = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/stone/stone_wall_02_diff_1k.jpg");
+const stoneNorm = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/stone/stone_wall_02_nor_gl_1k.png");
+
+// ===================== REALISTIC POMPEII BUILDINGS =====================
 function createBrokenBuilding(x, z, w, h, d) {
-    // Skip if building would land on a street
     if (isOnStreet(x, z)) return;
 
-    // Slightly smaller, more realistic Pompeii house sizes
-    w *= 0.6 + Math.random() * 0.4;   // width variation
-    h *= 0.5 + Math.random() * 0.5;   // height variation
-    d *= 0.6 + Math.random() * 0.4;   // depth variation
+    // Pompeii‑style variation
+    w *= 0.6 + Math.random() * 0.4;
+    h *= 0.5 + Math.random() * 0.5;
+    d *= 0.6 + Math.random() * 0.4;
 
-    // Base clay/brick color with natural variation
-    const baseColor = new THREE.Color(0xb5651d);
-    baseColor.offsetHSL(0, 0, (Math.random() - 0.5) * 0.25);
+    // Wall material
+    const wallMat = new THREE.MeshStandardMaterial({
+        map: wallTex,
+        normalMap: wallNorm,
+        roughnessMap: wallRough,
+        roughness: 0.95
+    });
 
+    // Main building block
     const building = new THREE.Mesh(
         new THREE.BoxGeometry(w, h, d),
-        new THREE.MeshBasicMaterial({ color: baseColor })
+        wallMat
     );
-
     building.position.set(x, h / 2, z);
 
-    // Slight tilt (earthquake damage)
-    building.rotation.y = (Math.random() - 0.5) * 0.15;
+    // Earthquake tilt
+    building.rotation.y = (Math.random() - 0.5) * 0.2;
     building.rotation.x = (Math.random() - 0.5) * 0.05;
 
     scene.add(building);
 
-    // Broken roof section
-    const brokenHeight = h * (0.15 + Math.random() * 0.25);
-    const rubble = new THREE.Mesh(
-        new THREE.BoxGeometry(w * (0.7 + Math.random()*0.2), brokenHeight, d * (0.7 + Math.random()*0.2)),
-        new THREE.MeshBasicMaterial({ color: 0x8a4b2a })
+    // Stone foundation
+    const foundation = new THREE.Mesh(
+        new THREE.BoxGeometry(w * 1.05, 0.4, d * 1.05),
+        new THREE.MeshStandardMaterial({
+            map: stoneTex,
+            normalMap: stoneNorm,
+            roughness: 1.0
+        })
     );
-    rubble.position.set(x, h - brokenHeight / 2, z);
-    rubble.rotation.y = (Math.random() - 0.5) * 0.4;
+    foundation.position.set(x, 0.2, z);
+    scene.add(foundation);
 
-    scene.add(rubble);
+    // Terracotta roof
+    const roof = new THREE.Mesh(
+        new THREE.BoxGeometry(w * 1.05, 0.25, d * 1.05),
+        new THREE.MeshStandardMaterial({
+            map: roofTex,
+            normalMap: roofNorm,
+            roughness: 0.9
+        })
+    );
+    roof.position.set(x, h, z);
 
-    // Add cracks (thin black lines)
-    for (let i = 0; i < 4; i++) {
-        const crack = new THREE.Mesh(
-            new THREE.PlaneGeometry(w * (0.3 + Math.random()*0.5), 0.15),
-            new THREE.MeshBasicMaterial({ color: 0x111111 })
+    roof.rotation.x = (Math.random() - 0.5) * 0.25;
+    roof.rotation.z = (Math.random() - 0.5) * 0.25;
+
+    scene.add(roof);
+
+    // Windows
+    const windowMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+
+    for (let i = 0; i < 2 + Math.random() * 3; i++) {
+        const win = new THREE.Mesh(
+            new THREE.PlaneGeometry(1.2, 1.2),
+            windowMat
         );
-        crack.position.set(
-            x + (Math.random() - 0.5) * w * 0.8,
-            (Math.random() * h),
+        win.position.set(
+            x + (Math.random() - 0.5) * w * 0.6,
+            (Math.random() * h * 0.6) + h * 0.2,
             z + d / 2 + 0.01
         );
-        crack.rotation.y = 0;
-        crack.rotation.z = (Math.random() - 0.5) * 0.6;
-        scene.add(crack);
+        building.add(win);
     }
 
-    // Random missing chunk (simulates collapsed wall)
-    if (Math.random() < 0.4) {
+    // Door
+    const door = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.8, 2.8),
+        new THREE.MeshStandardMaterial({ color: 0x3a2a1a })
+    );
+    door.position.set(x, 1.4, z + d / 2 + 0.02);
+    building.add(door);
+
+    // Wall damage
+    for (let i = 0; i < 1 + Math.random() * 3; i++) {
         const hole = new THREE.Mesh(
-            new THREE.BoxGeometry(w * 0.4, h * 0.4, 0.1),
-            new THREE.MeshBasicMaterial({ color: 0x000000 })
+            new THREE.BoxGeometry(
+                1 + Math.random() * 2,
+                1 + Math.random() * 2,
+                0.2
+            ),
+            new THREE.MeshStandardMaterial({ color: 0x2b1a10 })
         );
         hole.position.set(
-            x + (Math.random() - 0.5) * w * 0.5,
-            h * (0.3 + Math.random()*0.4),
-            z + d / 2 + 0.02
+            x + (Math.random() - 0.5) * w * 0.7,
+            (Math.random() * h * 0.8),
+            z + d / 2 + 0.11
         );
         scene.add(hole);
     }
-}
-    // ===================== EXTRA BUILDING RINGS =====================
 
-// Wider ring of buildings around the city
+    // Rubble on roof
+    const rubble = new THREE.Mesh(
+        new THREE.BoxGeometry(
+            w * (0.4 + Math.random() * 0.3),
+            h * 0.15,
+            d * (0.4 + Math.random() * 0.3)
+        ),
+        new THREE.MeshStandardMaterial({ color: 0x5a3a22 })
+    );
+    rubble.position.set(x, h - 0.1, z);
+    rubble.rotation.y = (Math.random() - 0.5) * 0.4;
+    scene.add(rubble);
+}
+
+// ===================== LIGHTING (REQUIRED FOR REALISM) =====================
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+sun.position.set(200, 300, 150);
+scene.add(sun);
+
+const ambient = new THREE.AmbientLight(0xffffff, 0.45);
+scene.add(ambient);
+
+// ===================== EXTRA BUILDING RINGS =====================
 for (let x = -180; x <= 180; x += 45) {
     for (let z = -180; z <= 180; z += 45) {
         if (!isOnStreet(x, z)) {
             createBrokenBuilding(
-                x,
-                z,
+                x, z,
                 20 + Math.random()*20,
                 12 + Math.random()*18,
                 20 + Math.random()*20
@@ -173,13 +235,12 @@ for (let x = -180; x <= 180; x += 45) {
     }
 }
 
-// Even wider outskirts (more sparse)
+// Outskirts
 for (let x = -260; x <= 260; x += 65) {
     for (let z = -260; z <= 260; z += 65) {
         if (!isOnStreet(x, z)) {
             createBrokenBuilding(
-                x,
-                z,
+                x, z,
                 25 + Math.random()*25,
                 15 + Math.random()*20,
                 25 + Math.random()*25
@@ -188,16 +249,14 @@ for (let x = -260; x <= 260; x += 65) {
     }
 }
 
-// ===================== RANDOM SMALL RUINS =====================
-// Adds tiny collapsed structures for variety
+// Random small ruins
 for (let i = 0; i < 80; i++) {
     const x = (Math.random() - 0.5) * 600;
     const z = (Math.random() - 0.5) * 600;
 
     if (!isOnStreet(x, z)) {
         createBrokenBuilding(
-            x,
-            z,
+            x, z,
             10 + Math.random()*10,
             6 + Math.random()*8,
             10 + Math.random()*10
@@ -205,27 +264,24 @@ for (let i = 0; i < 80; i++) {
     }
 }
 
-// ===================== BUILDING LAYOUT =====================
-
-// Buildings along the main street
+// Main street buildings
 for (let i = -120; i <= 120; i += 40) {
     createBrokenBuilding(i, -30, 25 + Math.random()*10, 15 + Math.random()*10, 25);
     createBrokenBuilding(i,  30, 25 + Math.random()*10, 15 + Math.random()*10, 25);
 }
 
-// Buildings along the cross street
+// Cross street buildings
 for (let i = -120; i <= 120; i += 40) {
     createBrokenBuilding(-30, i, 25, 15 + Math.random()*10, 25);
     createBrokenBuilding( 30, i, 25, 15 + Math.random()*10, 25);
 }
 
-// Fill the city blocks with more ruined buildings
+// Fill city blocks
 for (let x = -100; x <= 100; x += 50) {
     for (let z = -100; z <= 100; z += 50) {
         if (!isOnStreet(x, z)) {
             createBrokenBuilding(
-                x,
-                z,
+                x, z,
                 20 + Math.random()*15,
                 12 + Math.random()*15,
                 20 + Math.random()*15
