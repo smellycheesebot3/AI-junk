@@ -50,6 +50,20 @@ renderer.physicallyCorrectLights = true;
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.2;
+    
+ // ===================== REALISTIC LIGHTING =====================
+renderer.physicallyCorrectLights = true;
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+
+const sun = new THREE.DirectionalLight(0xffffff, 2.0);
+sun.position.set(200, 300, 150);
+sun.castShadow = true;
+scene.add(sun);
+
+const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+scene.add(ambient);
 
 // ===================== FLOOR =====================
 const floor = new THREE.Mesh(
