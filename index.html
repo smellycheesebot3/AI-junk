@@ -45,7 +45,13 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const sun = new THREE.DirectionalLight(0xffffff, 1);
+// SAFE LIGHTING (NO CRASH)
+const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+scene.add(hemi);
+
+const sun = new THREE.DirectionalLight(0xffffff, 0.3);
+sun.position.set(200, 300, 150);
+sun.castShadow = false; // IMPORTANT
 scene.add(sun);
 
 // ===================== FLOOR =====================
