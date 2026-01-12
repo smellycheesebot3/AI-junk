@@ -88,51 +88,72 @@ function isOnStreet(x, z) {
     return false;
 }
 
-// ===================== BROKEN / AGED BUILDINGS =====================
+// ===================== MORE REALISTIC / SMALLER POMPEII BUILDINGS =====================
 function createBrokenBuilding(x, z, w, h, d) {
     // Skip if building would land on a street
     if (isOnStreet(x, z)) return;
 
-    // Base clay/brick color with slight variation
+    // Slightly smaller, more realistic Pompeii house sizes
+    w *= 0.6 + Math.random() * 0.4;   // width variation
+    h *= 0.5 + Math.random() * 0.5;   // height variation
+    d *= 0.6 + Math.random() * 0.4;   // depth variation
+
+    // Base clay/brick color with natural variation
     const baseColor = new THREE.Color(0xb5651d);
-    baseColor.offsetHSL(0, 0, (Math.random() - 0.5) * 0.2);
+    baseColor.offsetHSL(0, 0, (Math.random() - 0.5) * 0.25);
 
     const building = new THREE.Mesh(
         new THREE.BoxGeometry(w, h, d),
         new THREE.MeshBasicMaterial({ color: baseColor })
     );
+
     building.position.set(x, h / 2, z);
 
     // Slight tilt (earthquake damage)
-    building.rotation.y = (Math.random() - 0.5) * 0.1;
+    building.rotation.y = (Math.random() - 0.5) * 0.15;
     building.rotation.x = (Math.random() - 0.5) * 0.05;
 
     scene.add(building);
 
-    // Broken top section
-    const brokenHeight = h * (0.2 + Math.random() * 0.3);
+    // Broken roof section
+    const brokenHeight = h * (0.15 + Math.random() * 0.25);
     const rubble = new THREE.Mesh(
-        new THREE.BoxGeometry(w * 0.9, brokenHeight, d * 0.9),
+        new THREE.BoxGeometry(w * (0.7 + Math.random()*0.2), brokenHeight, d * (0.7 + Math.random()*0.2)),
         new THREE.MeshBasicMaterial({ color: 0x8a4b2a })
     );
     rubble.position.set(x, h - brokenHeight / 2, z);
-    rubble.rotation.y = (Math.random() - 0.5) * 0.3;
+    rubble.rotation.y = (Math.random() - 0.5) * 0.4;
 
     scene.add(rubble);
 
-    // Cracks
-    for (let i = 0; i < 3; i++) {
+    // Add cracks (thin black lines)
+    for (let i = 0; i < 4; i++) {
         const crack = new THREE.Mesh(
-            new THREE.PlaneGeometry(w * 0.8, 0.2),
+            new THREE.PlaneGeometry(w * (0.3 + Math.random()*0.5), 0.15),
             new THREE.MeshBasicMaterial({ color: 0x111111 })
         );
         crack.position.set(
-            x + (Math.random() - 0.5) * w * 0.6,
+            x + (Math.random() - 0.5) * w * 0.8,
             (Math.random() * h),
             z + d / 2 + 0.01
         );
         crack.rotation.y = 0;
+        crack.rotation.z = (Math.random() - 0.5) * 0.6;
         scene.add(crack);
+    }
+
+    // Random missing chunk (simulates collapsed wall)
+    if (Math.random() < 0.4) {
+        const hole = new THREE.Mesh(
+            new THREE.BoxGeometry(w * 0.4, h * 0.4, 0.1),
+            new THREE.MeshBasicMaterial({ color: 0x000000 })
+        );
+        hole.position.set(
+            x + (Math.random() - 0.5) * w * 0.5,
+            h * (0.3 + Math.random()*0.4),
+            z + d / 2 + 0.02
+        );
+        scene.add(hole);
     }
 }
 
