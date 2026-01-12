@@ -75,14 +75,49 @@ street2.rotation.x = -Math.PI / 2;
 street2.position.set(0, 0.1, 0);
 scene.add(street2);
 
-// ===================== BUILDINGS =====================
-function createBuilding(x, z, w, h, d) {
+// ===================== BROKEN / AGED BUILDINGS =====================
+function createBrokenBuilding(x, z, w, h, d) {
+    // Base building
+    const baseColor = new THREE.Color(0xb5651d);
+    baseColor.offsetHSL(0, 0, (Math.random() - 0.5) * 0.2); // slight color variation
+
     const building = new THREE.Mesh(
         new THREE.BoxGeometry(w, h, d),
-        new THREE.MeshBasicMaterial({ color: 0xb5651d }) // clay/brick color
+        new THREE.MeshBasicMaterial({ color: baseColor })
     );
     building.position.set(x, h / 2, z);
+
+    // Slight tilt (earthquake damage)
+    building.rotation.y = (Math.random() - 0.5) * 0.1;
+    building.rotation.x = (Math.random() - 0.5) * 0.05;
+
     scene.add(building);
+
+    // Add broken top section
+    const brokenHeight = h * (0.2 + Math.random() * 0.3);
+    const rubble = new THREE.Mesh(
+        new THREE.BoxGeometry(w * 0.9, brokenHeight, d * 0.9),
+        new THREE.MeshBasicMaterial({ color: 0x8a4b2a })
+    );
+    rubble.position.set(x, h - brokenHeight / 2, z);
+    rubble.rotation.y = (Math.random() - 0.5) * 0.3;
+
+    scene.add(rubble);
+
+    // Add cracks (thin black planes)
+    for (let i = 0; i < 3; i++) {
+        const crack = new THREE.Mesh(
+            new THREE.PlaneGeometry(w * 0.8, 0.2),
+            new THREE.MeshBasicMaterial({ color: 0x111111 })
+        );
+        crack.position.set(
+            x + (Math.random() - 0.5) * w * 0.6,
+            (Math.random() * h),
+            z + d / 2 + 0.01
+        );
+        crack.rotation.y = 0;
+        scene.add(crack);
+    }
 }
 
 // Row of buildings along the main street
@@ -102,6 +137,29 @@ createBuilding(-30, -60, 20, 14, 20);
 createBuilding(30, -60, 25, 18, 25);
 createBuilding(-30, 60, 22, 16, 22);
 createBuilding(30, 60, 28, 20, 28);
+    
+    // ===================== BUILDING LAYOUT =====================
+
+// Main street rows
+for (let i = -120; i <= 120; i += 40) {
+    createBrokenBuilding(i, -30, 25 + Math.random()*10, 15 + Math.random()*10, 25);
+    createBrokenBuilding(i,  30, 25 + Math.random()*10, 15 + Math.random()*10, 25);
+}
+
+// Cross street rows
+for (let i = -120; i <= 120; i += 40) {
+    createBrokenBuilding(-30, i, 25, 15 + Math.random()*10, 25);
+    createBrokenBuilding( 30, i, 25, 15 + Math.random()*10, 25);
+}
+
+// Extra inner‑city buildings (fills the blocks)
+for (let x = -100; x <= 100; x += 50) {
+    for (let z = -100; z <= 100; z += 50) {
+        if (Math.abs(x) > 40 || Math.abs(z) > 40) {
+            createBrokenBuilding(x, z, 20 + Math.random()*15, 12 + Math.random()*15, 20 + Math.random()*15);
+        }
+    }
+}
 
 // ===================== WASD KEYS =====================
 const keys = { w: false, a: false, s: false, d: false };
