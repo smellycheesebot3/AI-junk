@@ -132,17 +132,16 @@ function createBrokenBuilding(x, z, w, h, d) {
     h *= 0.55 + Math.random() * 0.45;
     d *= 0.75 + Math.random() * 0.25;
 
-    // Darker Pompeii-style colours (ash-covered reds, browns, charcoals)
+    // Dark Pompeii-style colour
     const baseColor = new THREE.Color().setHSL(
-        0.04 + Math.random() * 0.03,   // warm volcanic hue
-        0.35 + Math.random() * 0.1,    // lower saturation
-        0.25 + Math.random() * 0.15    // darker brightness
+        0.04 + Math.random() * 0.03,
+        0.35 + Math.random() * 0.1,
+        0.25 + Math.random() * 0.15
     );
 
-    // More realistic material
     const material = new THREE.MeshStandardMaterial({
         color: baseColor,
-        roughness: 0.95,   // dusty, matte
+        roughness: 0.95,
         metalness: 0.0
     });
 
@@ -150,21 +149,34 @@ function createBrokenBuilding(x, z, w, h, d) {
         new THREE.BoxGeometry(w, h, d),
         material
     );
-
-    // Add slight damage/irregularity
-    building.rotation.y = (Math.random() - 0.5) * 0.15;
-    building.rotation.x = (Math.random() - 0.5) * 0.05;
-
-    // Compute normals for proper shading
     building.geometry.computeVertexNormals();
-
-    // Position on ground
     building.position.set(x, h / 2, z);
 
-    // Optional: slight sinking to look ancient
-    building.position.y *= 0.95;
+    // Slight tilt
+    building.rotation.y = (Math.random() - 0.5) * 0.15;
 
     scene.add(building);
+
+    // ===================== DOOR FRAME =====================
+    const doorWidth = w * (0.25 + Math.random() * 0.15);
+    const doorHeight = h * (0.35 + Math.random() * 0.15);
+
+    const doorGeo = new THREE.BoxGeometry(doorWidth, doorHeight, 0.2);
+    const doorMat = new THREE.MeshStandardMaterial({
+        color: 0x2a1a0f, // dark wood/charcoal
+        roughness: 0.9
+    });
+
+    const door = new THREE.Mesh(doorGeo, doorMat);
+
+    // Position door on the front face
+    door.position.set(
+        x,
+        doorHeight / 2,
+        z + d / 2 + 0.11
+    );
+
+    scene.add(door);
 }
 
 // ===================== EXTRA BUILDING RINGS =====================
@@ -365,14 +377,64 @@ function updateMovement() {
     if (keys.a) camera.position.add(right.multiplyScalar(speed));
     if (keys.d) camera.position.add(right.multiplyScalar(-speed));
 }
+    
+// ===================== PEOPLE WALKING =====================
+const people = [];
+
+function createPerson(px, pz) {
+    const bodyGeo = new THREE.CapsuleGeometry(1, 2, 4, 8);
+    const bodyMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color().setHSL(
+            Math.random(),
+            0.4,
+            0.4
+        )
+    });
+
+    const person = new THREE.Mesh(bodyGeo, bodyMat);
+    person.position.set(px, 1.5, pz);
+
+    // Random direction
+    person.userData.dir = new THREE.Vector3(
+        Math.random() - 0.5,
+        0,
+        Math.random() - 0.5
+    ).normalize();
+
+    people.push(person);
+    scene.add(person);
+}
+
+// Spawn 20 people
+for (let i = 0; i < 20; i++) {
+    const px = (Math.random() - 0.5) * 500;
+    const pz = (Math.random() - 0.5) * 500;
+    if (!isOnStreet(px, pz)) createPerson(px, pz);
+}
 
 // ===================== ANIMATION LOOP =====================
 function animate() {
     requestAnimationFrame(animate);
+
     updateMovement();
+
+    // Move people slowly
+    for (const p of people) {
+        p.position.addScaledVector(p.userData.dir, 0.05);
+
+        // Randomly change direction
+        if (Math.random() < 0.005) {
+            p.userData.dir = new THREE.Vector3(
+                Math.random() - 0.5,
+                0,
+                Math.random() - 0.5
+            ).normalize();
+        }
+    }
+
     renderer.render(scene, camera);
 }
 animate();
 </script>
-</body>
+</body> 
 </html>
