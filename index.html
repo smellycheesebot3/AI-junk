@@ -48,14 +48,14 @@ document.body.appendChild(renderer.domElement);
 // ===================== FLOOR =====================
 const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(800, 800),
-    new THREE.MeshBasicMaterial({ color: 0xB66A50 })
+    new THREE.MeshStandardMaterial({ color: 0xB66A50 })
 );
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
     
 // ===================== STREETS =====================
 // Pompeii-style grey clay/basalt roads
-const streetMaterial = new THREE.MeshBasicMaterial({ color: 0x6e6e6e });
+const streetMaterial = new THREE.MeshStandardMaterial({ color: 0x6e6e6e });
 
 // Main street
 const street1 = new THREE.Mesh(
@@ -294,7 +294,7 @@ for (let x = -100; x <= 100; x += 50) {
 
 // Volcano base (large cone)
 const vesuviusGeometry = new THREE.ConeGeometry(180, 250, 32);
-const vesuviusMaterial = new THREE.MeshBasicMaterial({ color: 0x5a4a3a });
+const vesuviusMaterial = new THREE.MeshStandardMaterial({ color: 0x5a4a3a });
 const vesuvius = new THREE.Mesh(vesuviusGeometry, vesuviusMaterial);
 
 // Position it behind the city
@@ -303,7 +303,7 @@ scene.add(vesuvius);
 
 // Crater (smaller inverted cone)
 const craterGeometry = new THREE.ConeGeometry(60, 40, 32);
-const craterMaterial = new THREE.MeshBasicMaterial({ color: 0x3a2a1a });
+const craterMaterial = new THREE.MeshStandardMaterial({ color: 0x3a2a1a });
 const crater = new THREE.Mesh(craterGeometry, craterMaterial);
 
 crater.position.set(0, 250, -400);
@@ -312,7 +312,7 @@ scene.add(crater);
 
 // Ashy top (dark ring)
 const ashGeometry = new THREE.CylinderGeometry(70, 80, 10, 32);
-const ashMaterial = new THREE.MeshBasicMaterial({ color: 0x2b2b2b });
+const ashMaterial = new THREE.MeshStandardMaterial({ color: 0x2b2b2b });
 const ash = new THREE.Mesh(ashGeometry, ashMaterial);
 
 ash.position.set(0, 245, -400);
