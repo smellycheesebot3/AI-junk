@@ -45,7 +45,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// ===================== SIMPLE FLOOR =====================
+// ===================== FLOOR =====================
 const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(500, 500),
     new THREE.MeshBasicMaterial({ color: 0x228B22 })
@@ -53,23 +53,20 @@ const floor = new THREE.Mesh(
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
 
-// ===================== WASD MOVEMENT =====================
-function updateMovement() {
-    const speed = 1.0;
+// ===================== WASD KEYS =====================
+const keys = { w: false, a: false, s: false, d: false };
 
-    const forward = new THREE.Vector3();
-    camera.getWorldDirection(forward);
+document.addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+    if (keys[k] !== undefined) keys[k] = true;
+});
 
-    const right = new THREE.Vector3();
-    right.crossVectors(camera.up, forward).normalize();
+document.addEventListener("keyup", e => {
+    const k = e.key.toLowerCase();
+    if (keys[k] !== undefined) keys[k] = false;
+});
 
-    if (keys.w) camera.position.add(forward.multiplyScalar(speed));
-    if (keys.s) camera.position.add(forward.multiplyScalar(-speed));
-    if (keys.a) camera.position.add(right.multiplyScalar(speed));
-    if (keys.d) camera.position.add(right.multiplyScalar(-speed));
-}
-    
-    // ===================== MOUSE LOOK =====================
+// ===================== MOUSE LOOK =====================
 let isMouseDown = false;
 let prevX = 0;
 let prevY = 0;
@@ -95,17 +92,32 @@ document.addEventListener("mousemove", (e) => {
 
     const sensitivity = 0.002;
 
-    // Horizontal rotation (left/right)
+    // Horizontal rotation
     camera.rotation.y -= dx * sensitivity;
 
-    // Vertical rotation (up/down)
+    // Vertical rotation
     camera.rotation.x -= dy * sensitivity;
 
-    // Limit vertical look so you can't flip upside down
+    // Limit vertical look
     const limit = Math.PI / 2 - 0.1;
     camera.rotation.x = Math.max(-limit, Math.min(limit, camera.rotation.x));
 });
 
+// ===================== MOVEMENT FUNCTION =====================
+function updateMovement() {
+    const speed = 1.0;
+
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
+
+    const right = new THREE.Vector3();
+    right.crossVectors(camera.up, forward).normalize();
+
+    if (keys.w) camera.position.add(forward.multiplyScalar(speed));
+    if (keys.s) camera.position.add(forward.multiplyScalar(-speed));
+    if (keys.a) camera.position.add(right.multiplyScalar(speed));
+    if (keys.d) camera.position.add(right.multiplyScalar(-speed));
+}
 
 // ===================== ANIMATION LOOP =====================
 function animate() {
@@ -115,6 +127,3 @@ function animate() {
 }
 animate();
 </script>
-
-</body>
-</html>
