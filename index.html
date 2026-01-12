@@ -59,7 +59,7 @@ const streetMaterial = new THREE.MeshBasicMaterial({ color: 0x6e6e6e });
 
 // Main street
 const street1 = new THREE.Mesh(
-    new THREE.PlaneGeometry(300, 20),
+    new THREE.PlaneGeometry(800, 20),
     streetMaterial
 );
 street1.rotation.x = -Math.PI / 2;
@@ -68,7 +68,7 @@ scene.add(street1);
 
 // Cross street
 const street2 = new THREE.Mesh(
-    new THREE.PlaneGeometry(20, 300),
+    new THREE.PlaneGeometry(20, 800),
     streetMaterial
 );
 street2.rotation.x = -Math.PI / 2;
