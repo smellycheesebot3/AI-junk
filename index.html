@@ -44,26 +44,14 @@ camera.position.set(0, 20, 50);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
-    
-// ===================== REALISTIC LIGHTING =====================
-renderer.physicallyCorrectLights = true;
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.2;
 
-const sun = new THREE.DirectionalLight(0xffffff, 2.0);
+// ===================== SAFE LIGHTING (NO CRASH) =====================
+const sun = new THREE.DirectionalLight(0xffffff, 1.2);
 sun.position.set(200, 300, 150);
-sun.castShadow = true;
 scene.add(sun);
 
-const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+const ambient = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambient);
-    
-// ===================== RENDERER SETTINGS (IMPORTANT) =====================
-renderer.physicallyCorrectLights = true;
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.2;
 
 // ===================== FLOOR =====================
 const floor = new THREE.Mesh(
