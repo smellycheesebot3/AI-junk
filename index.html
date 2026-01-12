@@ -7,7 +7,7 @@
         body { margin: 0; overflow: hidden; }
     </style>
 
-    <!-- Three.js (non‑module version, always works) -->
+    <!-- Three.js -->
     <script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
 </head>
 <body>
@@ -45,6 +45,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+// Simple, stable lighting
 const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
 scene.add(hemi);
 
@@ -55,9 +56,8 @@ const floor = new THREE.Mesh(
 );
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
-    
+
 // ===================== STREETS =====================
-// Pompeii-style grey clay/basalt roads
 const streetMaterial = new THREE.MeshStandardMaterial({ color: 0x6e6e6e });
 
 // Main street
@@ -91,7 +91,7 @@ function isOnStreet(x, z) {
 // ===================== TEXTURES =====================
 const texLoader = new THREE.TextureLoader();
 
-// Public‑domain textures
+// Public-domain textures (as in your original)
 const wallTex = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/plaster/plaster_01_diff_1k.jpg");
 const wallNorm = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/plaster/plaster_01_nor_gl_1k.png");
 const wallRough = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/plaster/plaster_01_rough_1k.jpg");
@@ -102,50 +102,46 @@ const roofNorm = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures
 const stoneTex = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/stone/stone_wall_02_diff_1k.jpg");
 const stoneNorm = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/stone/stone_wall_02_nor_gl_1k.png");
 
+// Make the stone texture tile nicely on the volcano
+stoneTex.wrapS = stoneTex.wrapT = THREE.RepeatWrapping;
+stoneTex.repeat.set(4, 4);
+stoneNorm.wrapS = stoneNorm.wrapT = THREE.RepeatWrapping;
+stoneNorm.repeat.set(4, 4);
+
+// ===================== VESUVIUS FOOTPRINT (for building clipping) =====================
+
+// Ground-level position of volcano center
+const VESUVIUS_CENTER = new THREE.Vector3(0, 0, -400);
+// Approx radius where the cone meets the ground
+const VESUVIUS_RADIUS = 190;
+
+function isInsideVesuvius(x, z) {
+    const dx = x - VESUVIUS_CENTER.x;
+    const dz = z - VESUVIUS_CENTER.z;
+    const distSq = dx * dx + dz * dz;
+    return distSq < VESUVIUS_RADIUS * VESUVIUS_RADIUS;
+}
+
 // ===================== REALISTIC POMPEII BUILDINGS =====================
 
-    function createBrokenBuilding(x, z, w, h, d) {
+function createBrokenBuilding(x, z, w, h, d) {
     // Skip streets
     if (isOnStreet(x, z)) return;
+
+    // Determine if this building is on Vesuvius' slope
+    const onVolcano = isInsideVesuvius(x, z);
 
     // Random variation
     w *= 0.7 + Math.random() * 0.3;
     h *= 0.6 + Math.random() * 0.4;
     d *= 0.7 + Math.random() * 0.3;
 
+    // If it's on the volcano, make it more "buried"
+    if (onVolcano) {
+        h *= 0.3 + Math.random() * 0.2; // mostly ruins poking out
+    }
+
     // Warm Pompeii-style colour
-    const baseColor = new THREE.Color().setHSL(
-        0.07 + Math.random() * 0.02,   // warm hue
-        0.45 + Math.random() * 0.1,    // saturation
-        0.45 + Math.random() * 0.1     // brightness
-    );
-
-    // Light-reactive material (will not be black)
-    const material = new THREE.MeshLambertMaterial({
-        color: baseColor
-    });
-
-    const building = new THREE.Mesh(
-        new THREE.BoxGeometry(w, h, d),
-        material
-    );
-
-    // Make sure shading works
-    building.geometry.computeVertexNormals();
-
-    // Position building on ground
-    building.position.set(x, h / 2, z);
-
-    scene.add(building);
-}
-
-    function createBuilding(x, z, w, h, d) {
-    if (isOnStreet(x, z)) return;
-
-    w *= 0.7 + Math.random() * 0.3;
-    h *= 0.6 + Math.random() * 0.4;
-    d *= 0.7 + Math.random() * 0.3;
-
     const baseColor = new THREE.Color().setHSL(
         0.07 + Math.random() * 0.02,
         0.45 + Math.random() * 0.1,
@@ -161,10 +157,19 @@ const stoneNorm = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Texture
         material
     );
 
-    building.position.set(x, h / 2, z);
     building.geometry.computeVertexNormals();
 
+    // Position building on ground
+    // If it's on the volcano, let it sink slightly so it "clips into" the slope visually
+    const baseY = h / 2;
+    building.position.set(x, onVolcano ? baseY * 0.3 : baseY, z);
+
     scene.add(building);
+}
+
+// A simple alias if you call createBuilding somewhere else
+function createBuilding(x, z, w, h, d) {
+    createBrokenBuilding(x, z, w, h, d);
 }
 
 // ===================== EXTRA BUILDING RINGS =====================
@@ -236,33 +241,73 @@ for (let x = -100; x <= 100; x += 50) {
     }
 }
 
-// ===================== MOUNT VESUVIUS =====================
+// ===================== MOUNT VESUVIUS (more realistic) =====================
 
-// Volcano base (large cone)
-const vesuviusGeometry = new THREE.ConeGeometry(180, 250, 32);
-const vesuviusMaterial = new THREE.MeshStandardMaterial({ color: 0x5a4a3a });
-const vesuvius = new THREE.Mesh(vesuviusGeometry, vesuviusMaterial);
+const vesuviusGroup = new THREE.Group();
 
-// Position it behind the city
-vesuvius.position.set(0, 125, -400);
-scene.add(vesuvius);
+// Main rocky cone
+const vesuviusGeometry = new THREE.ConeGeometry(200, 260, 64, 8);
+const vesuviusMaterial = new THREE.MeshStandardMaterial({
+    map: stoneTex,
+    normalMap: stoneNorm,
+    roughness: 1.0,
+    metalness: 0.0
+});
+const vesuviusMain = new THREE.Mesh(vesuviusGeometry, vesuviusMaterial);
+vesuviusMain.castShadow = false;
+vesuviusMain.receiveShadow = false;
+vesuviusGroup.add(vesuviusMain);
 
-// Crater (smaller inverted cone)
-const craterGeometry = new THREE.ConeGeometry(60, 40, 32);
-const craterMaterial = new THREE.MeshStandardMaterial({ color: 0x3a2a1a });
-const crater = new THREE.Mesh(craterGeometry, craterMaterial);
+// Darker, steeper inner cone near top
+const innerGeo = new THREE.ConeGeometry(120, 160, 32, 4);
+const innerMat = new THREE.MeshStandardMaterial({
+    color: 0x3b2b23,
+    roughness: 1.0,
+    metalness: 0.0
+});
+const innerCone = new THREE.Mesh(innerGeo, innerMat);
+innerCone.position.y = 80;
+vesuviusGroup.add(innerCone);
 
-crater.position.set(0, 250, -400);
-crater.rotation.x = Math.PI; // flip upside down
-scene.add(crater);
+// Crater rim (ring)
+const craterRimGeo = new THREE.CylinderGeometry(70, 80, 12, 32, 1, true);
+const craterRimMat = new THREE.MeshStandardMaterial({
+    color: 0x2d1f17,
+    roughness: 1.0,
+    metalness: 0.0,
+    side: THREE.DoubleSide
+});
+const craterRim = new THREE.Mesh(craterRimGeo, craterRimMat);
+craterRim.position.y = 130;
+vesuviusGroup.add(craterRim);
 
-// Ashy top (dark ring)
-const ashGeometry = new THREE.CylinderGeometry(70, 80, 10, 32);
-const ashMaterial = new THREE.MeshStandardMaterial({ color: 0x2b2b2b });
-const ash = new THREE.Mesh(ashGeometry, ashMaterial);
+// Dark crater interior
+const craterInnerGeo = new THREE.ConeGeometry(65, 40, 32);
+const craterInnerMat = new THREE.MeshStandardMaterial({
+    color: 0x1a120d,
+    roughness: 1.0,
+    metalness: 0.0
+});
+const craterInner = new THREE.Mesh(craterInnerGeo, craterInnerMat);
+craterInner.position.y = 130;
+craterInner.rotation.x = Math.PI;
+vesuviusGroup.add(craterInner);
 
-ash.position.set(0, 245, -400);
-scene.add(ash);
+// Ash field around the volcano base
+const ashFieldGeo = new THREE.CircleGeometry(260, 48);
+const ashFieldMat = new THREE.MeshStandardMaterial({
+    color: 0x2b2b2b,
+    roughness: 1.0,
+    metalness: 0.0
+});
+const ashField = new THREE.Mesh(ashFieldGeo, ashFieldMat);
+ashField.rotation.x = -Math.PI / 2;
+ashField.position.y = 0.02;
+vesuviusGroup.add(ashField);
+
+// Position whole volcano behind the city
+vesuviusGroup.position.set(0, 125, -400);
+scene.add(vesuviusGroup);
 
 // ===================== WASD KEYS =====================
 const keys = { w: false, a: false, s: false, d: false };
@@ -303,13 +348,9 @@ document.addEventListener("mousemove", (e) => {
 
     const sensitivity = 0.002;
 
-    // Horizontal rotation
     camera.rotation.y -= dx * sensitivity;
-
-    // Vertical rotation
     camera.rotation.x -= dy * sensitivity;
 
-    // Limit vertical look
     const limit = Math.PI / 2 - 0.1;
     camera.rotation.x = Math.max(-limit, Math.min(limit, camera.rotation.x));
 });
@@ -338,3 +379,5 @@ function animate() {
 }
 animate();
 </script>
+</body>
+</html>
