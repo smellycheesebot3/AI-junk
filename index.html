@@ -54,29 +54,58 @@ floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
 
 // ===================== WASD MOVEMENT =====================
-const keys = { w: false, a: false, s: false, d: false };
-
-document.addEventListener("keydown", e => {
-    const k = e.key.toLowerCase();
-    if (keys[k] !== undefined) keys[k] = true;
-});
-
-document.addEventListener("keyup", e => {
-    const k = e.key.toLowerCase();
-    if (keys[k] !== undefined) keys[k] = false;
-});
-
 function updateMovement() {
     const speed = 1.0;
 
-    // Forward/backward
-    if (keys.w) camera.position.z -= speed;
-    if (keys.s) camera.position.z += speed;
+    const forward = new THREE.Vector3();
+    camera.getWorldDirection(forward);
 
-    // Left/right
-    if (keys.a) camera.position.x -= speed;
-    if (keys.d) camera.position.x += speed;
+    const right = new THREE.Vector3();
+    right.crossVectors(camera.up, forward).normalize();
+
+    if (keys.w) camera.position.add(forward.multiplyScalar(speed));
+    if (keys.s) camera.position.add(forward.multiplyScalar(-speed));
+    if (keys.a) camera.position.add(right.multiplyScalar(speed));
+    if (keys.d) camera.position.add(right.multiplyScalar(-speed));
 }
+    
+    // ===================== MOUSE LOOK =====================
+let isMouseDown = false;
+let prevX = 0;
+let prevY = 0;
+
+document.addEventListener("mousedown", (e) => {
+    isMouseDown = true;
+    prevX = e.clientX;
+    prevY = e.clientY;
+});
+
+document.addEventListener("mouseup", () => {
+    isMouseDown = false;
+});
+
+document.addEventListener("mousemove", (e) => {
+    if (!isMouseDown) return;
+
+    const dx = e.clientX - prevX;
+    const dy = e.clientY - prevY;
+
+    prevX = e.clientX;
+    prevY = e.clientY;
+
+    const sensitivity = 0.002;
+
+    // Horizontal rotation (left/right)
+    camera.rotation.y -= dx * sensitivity;
+
+    // Vertical rotation (up/down)
+    camera.rotation.x -= dy * sensitivity;
+
+    // Limit vertical look so you can't flip upside down
+    const limit = Math.PI / 2 - 0.1;
+    camera.rotation.x = Math.max(-limit, Math.min(limit, camera.rotation.x));
+});
+
 
 // ===================== ANIMATION LOOP =====================
 function animate() {
