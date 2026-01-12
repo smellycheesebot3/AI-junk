@@ -52,6 +52,56 @@ const floor = new THREE.Mesh(
 );
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
+    
+    // ===================== STREETS =====================
+// Pompeii-style grey clay/basalt roads
+const streetMaterial = new THREE.MeshBasicMaterial({ color: 0x6e6e6e });
+
+// Main street
+const street1 = new THREE.Mesh(
+    new THREE.PlaneGeometry(300, 20),
+    streetMaterial
+);
+street1.rotation.x = -Math.PI / 2;
+street1.position.set(0, 0.1, 0);
+scene.add(street1);
+
+// Cross street
+const street2 = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 300),
+    streetMaterial
+);
+street2.rotation.x = -Math.PI / 2;
+street2.position.set(0, 0.1, 0);
+scene.add(street2);
+
+// ===================== BUILDINGS =====================
+function createBuilding(x, z, w, h, d) {
+    const building = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshBasicMaterial({ color: 0xb5651d }) // clay/brick color
+    );
+    building.position.set(x, h / 2, z);
+    scene.add(building);
+}
+
+// Row of buildings along the main street
+createBuilding(-60, -30, 30, 20, 30);
+createBuilding(-20, -30, 20, 15, 20);
+createBuilding(20, -30, 25, 18, 25);
+createBuilding(60, -30, 35, 22, 30);
+
+// Opposite side
+createBuilding(-60, 30, 25, 18, 25);
+createBuilding(-20, 30, 20, 12, 20);
+createBuilding(20, 30, 30, 20, 30);
+createBuilding(60, 30, 22, 16, 22);
+
+// Buildings along the cross street
+createBuilding(-30, -60, 20, 14, 20);
+createBuilding(30, -60, 25, 18, 25);
+createBuilding(-30, 60, 22, 16, 22);
+createBuilding(30, 60, 28, 20, 28);
 
 // ===================== WASD KEYS =====================
 const keys = { w: false, a: false, s: false, d: false };
