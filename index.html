@@ -45,6 +45,9 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
+const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+scene.add(hemi);
+
 // ===================== FLOOR =====================
 const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(800, 800),
@@ -100,7 +103,43 @@ const stoneTex = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures
 const stoneNorm = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/stone/stone_wall_02_nor_gl_1k.png");
 
 // ===================== REALISTIC POMPEII BUILDINGS =====================
-function createBuilding(x, z, w, h, d) {
+
+    function createBrokenBuilding(x, z, w, h, d) {
+    // Skip streets
+    if (isOnStreet(x, z)) return;
+
+    // Random variation
+    w *= 0.7 + Math.random() * 0.3;
+    h *= 0.6 + Math.random() * 0.4;
+    d *= 0.7 + Math.random() * 0.3;
+
+    // Warm Pompeii-style colour
+    const baseColor = new THREE.Color().setHSL(
+        0.07 + Math.random() * 0.02,   // warm hue
+        0.45 + Math.random() * 0.1,    // saturation
+        0.45 + Math.random() * 0.1     // brightness
+    );
+
+    // Light-reactive material (will not be black)
+    const material = new THREE.MeshLambertMaterial({
+        color: baseColor
+    });
+
+    const building = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        material
+    );
+
+    // Make sure shading works
+    building.geometry.computeVertexNormals();
+
+    // Position building on ground
+    building.position.set(x, h / 2, z);
+
+    scene.add(building);
+}
+
+    function createBuilding(x, z, w, h, d) {
     if (isOnStreet(x, z)) return;
 
     w *= 0.7 + Math.random() * 0.3;
