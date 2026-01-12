@@ -100,169 +100,33 @@ const stoneTex = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures
 const stoneNorm = texLoader.load("https://cdn.jsdelivr.net/gh/Poly-Haven/Textures/stone/stone_wall_02_nor_gl_1k.png");
 
 // ===================== REALISTIC POMPEII BUILDINGS =====================
-function createBrokenBuilding(x, z, w, h, d) {
+function createBuilding(x, z, w, h, d) {
     if (isOnStreet(x, z)) return;
 
-    // Pompeii‑style variation
-    w *= 0.6 + Math.random() * 0.4;
-    h *= 0.5 + Math.random() * 0.5;
-    d *= 0.6 + Math.random() * 0.4;
-
-    // Wall material
-    const wallMat = new THREE.MeshStandardMaterial({
-        map: wallTex,
-        normalMap: wallNorm,
-        roughnessMap: wallRough,
-        roughness: 0.95
-    });
-
-    // Main building block
-    const building = new THREE.Mesh(
-        new THREE.BoxGeometry(w, h, d),
-        wallMat
-    );
-    building.position.set(x, h / 2, z);
-
-    // Earthquake tilt
-    building.rotation.y = (Math.random() - 0.5) * 0.2;
-    building.rotation.x = (Math.random() - 0.5) * 0.05;
-
-    scene.add(building);
-
-    // Stone foundation
-    const foundation = new THREE.Mesh(
-        new THREE.BoxGeometry(w * 1.05, 0.4, d * 1.05),
-        new THREE.MeshStandardMaterial({
-            map: stoneTex,
-            normalMap: stoneNorm,
-            roughness: 1.0
-        })
-    );
-    foundation.position.set(x, 0.2, z);
-    scene.add(foundation);
-
-    // Terracotta roof
-    const roof = new THREE.Mesh(
-        new THREE.BoxGeometry(w * 1.05, 0.25, d * 1.05),
-        new THREE.MeshStandardMaterial({
-            map: roofTex,
-            normalMap: roofNorm,
-            roughness: 0.9
-        })
-    );
-    roof.position.set(x, h, z);
-
-    roof.rotation.x = (Math.random() - 0.5) * 0.25;
-    roof.rotation.z = (Math.random() - 0.5) * 0.25;
-
-    scene.add(roof);
-
-    // Windows
-    const windowMat = new THREE.MeshStandardMaterial({ color: 0x674123 });
-
-    for (let i = 0; i < 2 + Math.random() * 3; i++) {
-        const win = new THREE.Mesh(
-            new THREE.PlaneGeometry(1.2, 1.2),
-            windowMat
-        );
-        win.position.set(
-            x + (Math.random() - 0.5) * w * 0.6,
-            (Math.random() * h * 0.6) + h * 0.2,
-            z + d / 2 + 0.01
-        );
-        building.add(win);
-    }
-
-    // Door
-    const door = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.8, 2.8),
-        new THREE.MeshStandardMaterial({ color: 0x8b6c5c })
-    );
-    door.position.set(x, 1.4, z + d / 2 + 0.02);
-    building.add(door);
-
-    // Wall damage
-    for (let i = 0; i < 1 + Math.random() * 3; i++) {
-        const hole = new THREE.Mesh(
-            new THREE.BoxGeometry(
-                1 + Math.random() * 2,
-                1 + Math.random() * 2,
-                0.2
-            ),
-            new THREE.MeshStandardMaterial({ color: 0x2b1a10 })
-        );
-        hole.position.set(
-            x + (Math.random() - 0.5) * w * 0.7,
-            (Math.random() * h * 0.8),
-            z + d / 2 + 0.11
-        );
-        scene.add(hole);
-    }
-
-    // Rubble on roof
-    const rubble = new THREE.Mesh(
-        new THREE.BoxGeometry(
-            w * (0.4 + Math.random() * 0.3),
-            h * 0.15,
-            d * (0.4 + Math.random() * 0.3)
-        ),
-        new THREE.MeshStandardMaterial({ color: 0x5a3a22 })
-    );
-    rubble.position.set(x, h - 0.1, z);
-    rubble.rotation.y = (Math.random() - 0.5) * 0.4;
-    scene.add(rubble);
-}
-
-    function createBuilding(x, z, w, h, d) {
-    // Skip streets
-    if (isOnStreet(x, z)) return;
-
-    // Random variation
     w *= 0.7 + Math.random() * 0.3;
     h *= 0.6 + Math.random() * 0.4;
     d *= 0.7 + Math.random() * 0.3;
 
-    // Choose a visible, warm Pompeii-style colour
     const baseColor = new THREE.Color().setHSL(
-        0.07 + Math.random() * 0.02,   // warm hue
-        0.45 + Math.random() * 0.1,    // saturation
-        0.45 + Math.random() * 0.1     // brightness
+        0.07 + Math.random() * 0.02,
+        0.45 + Math.random() * 0.1,
+        0.45 + Math.random() * 0.1
     );
 
-    // Light-reactive material (this is the important part)
-    const material = new THREE.MeshStandardMaterial({
-        color: baseColor,
-        roughness: 0.9,
-        metalness: 0.0
+    const material = new THREE.MeshLambertMaterial({
+        color: baseColor
     });
 
-    // Geometry
     const building = new THREE.Mesh(
         new THREE.BoxGeometry(w, h, d),
         material
     );
 
-
-        
-    // Ensure normals exist
-    building.geometry.computeVertexNormals();
-
-    // Position
     building.position.set(x, h / 2, z);
-
-    // Slight random tilt
-    building.rotation.y = (Math.random() - 0.5) * 0.1;
+    building.geometry.computeVertexNormals();
 
     scene.add(building);
 }
-
-// ===================== LIGHTING (REQUIRED FOR REALISM) =====================
-const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-sun.position.set(200, 300, 150);
-scene.add(sun);
-
-const ambient = new THREE.AmbientLight(0xffffff, 0.45);
-scene.add(ambient);
 
 // ===================== EXTRA BUILDING RINGS =====================
 for (let x = -180; x <= 180; x += 45) {
