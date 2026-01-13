@@ -50,6 +50,24 @@ document.body.appendChild(renderer.domElement);
 const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
 scene.add(hemi);
 
+// ===================== BACKGROUND MUSIC =====================
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+const bgMusic = new THREE.Audio(listener);
+const audioLoader = new THREE.AudioLoader();
+
+// Replace this with any MP3 URL you want
+audioLoader.load(
+    "https://cdn.pixabay.com/download/audio/2022/03/15/audio_3b4f2f1d2b.mp3?filename=ancient-rome-ambient-110624.mp3",
+    function(buffer) {
+        bgMusic.setBuffer(buffer);
+        bgMusic.setLoop(true);
+        bgMusic.setVolume(0.4);
+        bgMusic.play();
+    }
+);
+
 // ===================== FLOOR =====================
 const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(800, 800),
