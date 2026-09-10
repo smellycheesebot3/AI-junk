@@ -1,1144 +1,145 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>ClipHub — You Know Why You're Here</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: Arial, Helvetica, sans-serif;
-      background: #0d0d0d;
-      color: #eee;
-    }
-
-    /* =========================
-       HEADER
-    ========================= */
-
-    header {
-      height: 70px;
-      background: #171717;
-      border-bottom: 1px solid #292929;
-
-      display: flex;
-      align-items: center;
-
-      padding: 0 5%;
-      gap: 25px;
-
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-
-    .logo {
-      font-size: 26px;
-      font-weight: 900;
-      letter-spacing: -1px;
-      white-space: nowrap;
-    }
-
-    .logo span {
-      background: #ff8a00;
-      color: #111;
-      padding: 3px 7px;
-      border-radius: 5px;
-      margin-left: 3px;
-    }
-
-    .search {
-      flex: 1;
-      max-width: 650px;
-      display: flex;
-    }
-
-    .search input {
-      width: 100%;
-
-      background: #252525;
-      color: white;
-
-      border: 1px solid #383838;
-      border-right: none;
-
-      padding: 12px 15px;
-      font-size: 14px;
-
-      outline: none;
-
-      border-radius: 6px 0 0 6px;
-    }
-
-    .search input:focus {
-      border-color: #ff8a00;
-    }
-
-    .search button {
-      border: none;
-      background: #ff8a00;
-
-      padding: 0 20px;
-
-      font-size: 17px;
-      cursor: pointer;
-
-      border-radius: 0 6px 6px 0;
-    }
-
-    .login {
-      color: #bbb;
-      text-decoration: none;
-      font-size: 14px;
-    }
-
-    .login:hover {
-      color: white;
-    }
-
-    .upload {
-      border: none;
-      background: #ff8a00;
-
-      color: #111;
-
-      padding: 10px 17px;
-
-      font-weight: bold;
-      border-radius: 5px;
-
-      cursor: pointer;
-    }
-
-    /* =========================
-       NAVIGATION
-    ========================= */
-
-    nav {
-      display: flex;
-      gap: 25px;
-
-      padding: 14px 5%;
-
-      background: #131313;
-
-      border-bottom: 1px solid #252525;
-
-      overflow-x: auto;
-    }
-
-    nav a {
-      color: #999;
-      text-decoration: none;
-
-      font-size: 14px;
-      white-space: nowrap;
-    }
-
-    nav a:hover,
-    nav a.active {
-      color: #ff8a00;
-    }
-
-    /* =========================
-       MAIN
-    ========================= */
-
-    main {
-      width: 90%;
-      max-width: 1400px;
-
-      margin: 30px auto;
-    }
-
-    /* =========================
-       HERO
-    ========================= */
-
-    .hero {
-      position: relative;
-
-      padding: 45px;
-
-      border-radius: 10px;
-
-      background:
-        radial-gradient(
-          circle at 80% 30%,
-          #39230d 0%,
-          #191919 35%,
-          #111 75%
-        );
-
-      border: 1px solid #292929;
-
-      overflow: hidden;
-
-      margin-bottom: 35px;
-    }
-
-    .hero::after {
-      content: "👀";
-
-      position: absolute;
-
-      right: 60px;
-      top: 25px;
-
-      font-size: 100px;
-
-      opacity: .08;
-    }
-
-    .hero h1 {
-      font-size: 34px;
-      margin-bottom: 12px;
-    }
-
-    .hero h1 span {
-      color: #ff8a00;
-    }
-
-    .hero p {
-      color: #999;
-
-      max-width: 650px;
-
-      line-height: 1.7;
-
-      font-size: 15px;
-    }
-
-    .hero-button {
-      display: inline-block;
-
-      margin-top: 22px;
-
-      padding: 11px 20px;
-
-      background: #ff8a00;
-
-      color: #111;
-
-      text-decoration: none;
-
-      font-weight: bold;
-
-      border-radius: 5px;
-    }
-
-    /* =========================
-       SECTION TITLES
-    ========================= */
-
-    .section-title {
-      display: flex;
-
-      justify-content: space-between;
-      align-items: center;
-
-      margin-bottom: 18px;
-    }
-
-    .section-title h2 {
-      font-size: 21px;
-    }
-
-    .section-title a {
-      color: #ff8a00;
-
-      font-size: 13px;
-
-      text-decoration: none;
-    }
-
-    /* =========================
-       VIDEO GRID
-    ========================= */
-
-    .grid {
-      display: grid;
-
-      grid-template-columns:
-        repeat(4, 1fr);
-
-      gap: 20px;
-
-      margin-bottom: 40px;
-    }
-
-    .card {
-      background: #181818;
-
-      border: 1px solid #282828;
-
-      border-radius: 7px;
-
-      overflow: hidden;
-
-      cursor: pointer;
-
-      transition:
-        transform .2s ease,
-        border-color .2s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-5px);
-
-      border-color: #ff8a00;
-    }
-
-    .thumbnail {
-      height: 165px;
-
-      display: flex;
-
-      justify-content: center;
-      align-items: center;
-
-      font-size: 48px;
-
-      position: relative;
-
-      background:
-        linear-gradient(
-          135deg,
-          #303030,
-          #171717
-        );
-    }
-
-    .thumbnail.orange {
-      background:
-        linear-gradient(
-          135deg,
-          #4b2b0c,
-          #171717
-        );
-    }
-
-    .thumbnail.blue {
-      background:
-        linear-gradient(
-          135deg,
-          #172c3d,
-          #171717
-        );
-    }
-
-    .thumbnail.purple {
-      background:
-        linear-gradient(
-          135deg,
-          #30203b,
-          #171717
-        );
-    }
-
-    .thumbnail.green {
-      background:
-        linear-gradient(
-          135deg,
-          #193529,
-          #171717
-        );
-    }
-
-    .duration {
-      position: absolute;
-
-      right: 8px;
-      bottom: 8px;
-
-      background: rgba(0, 0, 0, .85);
-
-      padding: 4px 7px;
-
-      border-radius: 4px;
-
-      font-size: 11px;
-    }
-
-    .card-content {
-      padding: 13px;
-    }
-
-    .card h3 {
-      font-size: 14px;
-
-      line-height: 1.4;
-
-      margin-bottom: 8px;
-    }
-
-    .meta {
-      color: #777;
-
-      font-size: 12px;
-    }
-
-    /* =========================
-       SUSPICIOUS SECTION
-    ========================= */
-
-    .notice {
-      background: #181818;
-
-      border-left: 3px solid #ff8a00;
-
-      padding: 20px;
-
-      margin-bottom: 40px;
-
-      color: #aaa;
-
-      line-height: 1.6;
-
-      font-size: 14px;
-    }
-
-    .notice strong {
-      color: #ff8a00;
-    }
-
-    /* =========================
-       CATEGORIES
-    ========================= */
-
-    .categories {
-      display: flex;
-
-      flex-wrap: wrap;
-
-      gap: 10px;
-
-      margin-bottom: 45px;
-    }
-
-    .category {
-      background: #1d1d1d;
-
-      border: 1px solid #303030;
-
-      color: #aaa;
-
-      padding: 10px 17px;
-
-      border-radius: 20px;
-
-      font-size: 13px;
-
-      cursor: pointer;
-
-      transition: .2s;
-    }
-
-    .category:hover {
-      color: #ff8a00;
-
-      border-color: #ff8a00;
-
-      background: #211b15;
-    }
-
-    /* =========================
-       FOOTER
-    ========================= */
-
-    footer {
-      background: #151515;
-
-      border-top: 1px solid #292929;
-
-      text-align: center;
-
-      padding: 35px 20px;
-
-      color: #666;
-
-      font-size: 13px;
-    }
-
-    footer strong {
-      color: #ff8a00;
-    }
-
-    footer .links {
-      margin-top: 12px;
-
-      display: flex;
-
-      justify-content: center;
-
-      gap: 20px;
-
-      flex-wrap: wrap;
-    }
-
-    footer a {
-      color: #777;
-
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      color: #ff8a00;
-    }
-
-    /* =========================
-       RESPONSIVE
-    ========================= */
-
-    @media (max-width: 1050px) {
-      .grid {
-        grid-template-columns:
-          repeat(3, 1fr);
-      }
-    }
-
-    @media (max-width: 750px) {
-      header {
-        padding: 0 15px;
-        gap: 10px;
-      }
-
-      .login,
-      .upload {
-        display: none;
-      }
-
-      main {
-        width: 94%;
-      }
-
-      .grid {
-        grid-template-columns:
-          repeat(2, 1fr);
-      }
-
-      .hero {
-        padding: 30px;
-      }
-
-      .hero h1 {
-        font-size: 27px;
-      }
-
-      .thumbnail {
-        height: 135px;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero {
-        padding: 25px;
-      }
-
-      .hero::after {
-        display: none;
-      }
-
-      nav {
-        gap: 18px;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClipHub — Video Platform</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#111;color:#ddd;font-size:13px}
+a{text-decoration:none;color:inherit}
+.top{height:52px;background:#191919;border-bottom:1px solid #303030;display:flex;align-items:center;padding:0 18px;gap:18px}
+.brand{font-size:22px;font-weight:900;color:#fff;white-space:nowrap}
+.brand b{background:#f5a000;color:#111;padding:3px 6px;border-radius:2px;margin-left:2px}
+.menu{font-size:20px;color:#aaa;cursor:pointer}
+.search{display:flex;height:32px;flex:1;max-width:620px;margin:0 auto}
+.search input{flex:1;background:#292929;border:1px solid #444;color:#eee;padding:0 12px;outline:none}
+.search button{width:46px;border:0;background:#f5a000;color:#111;font-weight:bold;cursor:pointer}
+.actions{display:flex;gap:13px;align-items:center;color:#aaa;white-space:nowrap}
+.actions .btn{padding:7px 10px;border:1px solid #444;background:#242424;border-radius:2px}
+.actions .orange{background:#f5a000;border-color:#f5a000;color:#111;font-weight:bold}
+.bar{height:38px;background:#202020;border-bottom:1px solid #333;display:flex;align-items:center;padding:0 20px;overflow:hidden}
+.bar a{padding:12px 15px;color:#aaa;font-size:12px;border-right:1px solid #303030;white-space:nowrap}
+.bar a:first-child{color:#f5a000}
+.wrap{width:min(1450px,96%);margin:18px auto}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:18px}
+.panel{background:#191919;border:1px solid #2d2d2d}
+.panel-head{height:43px;border-bottom:1px solid #303030;display:flex;align-items:center;justify-content:space-between;padding:0 13px}
+.panel-head h2{font-size:15px;color:#eee}
+.panel-head h2 span{color:#f5a000}
+.panel-head a{font-size:11px;color:#aaa}
+.panel-head a:hover{color:#f5a000}
+.hero{background:#1a1a1a;border:1px solid #303030;padding:18px;margin-bottom:18px}
+.hero h1{font-size:21px;color:#fff;margin-bottom:6px}
+.hero h1 span{color:#f5a000}
+.hero p{color:#888;font-size:12px}
+.filters{display:flex;gap:7px;margin:12px 12px 0;flex-wrap:wrap}
+.filter{background:#252525;border:1px solid #393939;color:#aaa;padding:6px 10px;font-size:11px}
+.filter.active{background:#f5a000;color:#111;border-color:#f5a000;font-weight:bold}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px}
+.card{background:#121212;border:1px solid #2b2b2b;overflow:hidden;transition:.15s}
+.card:hover{border-color:#666}
+.thumbnail{height:132px}
+.card-content{padding:8px 9px 10px}
+.card h3{font-size:12px;line-height:1.35;color:#eee;margin-bottom:6px}
+.meta{font-size:10px;color:#777}
+.duration{font-size:10px}
+.side-title{padding:12px;border-bottom:1px solid #303030;font-size:14px;font-weight:bold}
+.side-item{display:flex;gap:9px;padding:10px;border-bottom:1px solid #292929}
+.side-thumb{width:74px;height:48px;background:#292929;display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+.side-item strong{font-size:11px;line-height:1.3;display:block;color:#ddd}
+.side-item small{font-size:9px;color:#777}
+.categories{padding:11px;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cat{background:#242424;border:1px solid #333;padding:8px;color:#999;font-size:11px}
+.cat:hover{color:#f5a000}
+.notice{margin-top:18px;padding:12px;background:#191919;border:1px solid #303030;color:#888;font-size:11px}
+footer{margin-top:25px;background:#191919;border-top:1px solid #303030;padding:25px;text-align:center;color:#666;font-size:11px}
+footer strong{color:#f5a000}
+@media(max-width:1100px){.grid{grid-template-columns:repeat(3,1fr)}.layout{grid-template-columns:1fr}}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}.actions .btn{display:none}.top{gap:10px;padding:0 10px}.brand{font-size:18px}}
+@media(max-width:460px){.grid{grid-template-columns:1fr}.search{max-width:none}.menu{display:none}.bar a{padding:12px 9px}}
+</style>
 </head>
-
 <body>
+<header class="top">
+  <div class="menu">☰</div>
+  <a class="brand" href="#">Clip<b>Hub</b></a>
+  <form class="search" id="searchForm">
+    <input id="searchInput" type="search" placeholder="Search videos...">
+    <button type="submit">🔍</button>
+  </form>
+  <div class="actions">
+    <a class="btn" href="#">Log in</a>
+    <a class="btn orange" href="#">Upload</a>
+  </div>
+</header>
 
-  <!-- HEADER -->
+<nav class="bar">
+  <a href="#">HOME</a><a href="#">VIDEOS</a><a href="#">CATEGORIES</a>
+  <a href="#">TRENDING</a><a href="#">NEW</a><a href="#">TOP RATED</a>
+  <a href="#">CREATORS</a><a href="#">GOONING</a><a href="#">SEX GAGS</a><a href="#">TOYS</a>
+</nav>
 
-  <header>
+<main class="wrap">
+  <div class="hero">
+    <h1>Discover <span>what's trending</span></h1>
+    <p>Browse popular clips, internet finds, gooning moments, sex gags and more.</p>
+  </div>
 
-    <div class="logo">
-      Clip<span>Hub?</span>
-    </div>
+  <div class="layout">
+    <section>
+      <div class="panel">
+        <div class="panel-head">
+          <h2>🔥 <span>Trending</span> videos</h2>
+          <a href="#">VIEW ALL →</a>
+        </div>
+        <div class="filters">
+          <span class="filter active">Trending</span>
+          <span class="filter">Most viewed</span>
+          <span class="filter">Recently added</span>
+          <span class="filter">Top rated</span>
+        </div>
+        <div class="grid" id="videoGrid">
 
-    <div class="search">
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Search something questionable..."
-      >
-
-      <button onclick="searchVideos()">
-        🔍
-      </button>
-    </div>
-
-    <a href="#" class="login">
-      Log in
-    </a>
-
-    <button class="upload">
-      Upload
-    </button>
-
-  </header>
-
-
-  <!-- NAVIGATION -->
-
-  <nav>
-
-    <a href="#" class="active">
-      Home
-    </a>
-
-    <a href="#">
-      Trending
-    </a>
-
-    <a href="#">
-      New
-    </a>
-
-    <a href="#">
-      Popular
-    </a>
-
-    <a href="#">
-      Something Questionable
-    </a>
-
-    <a href="#">
-      Clips
-    </a>
-
-    <a href="#">
-      ASMR
-    </a>
-
-    <a href="#">
-      After Dark
-    </a>
-
-    <a href="#">
-      Random
-    </a>
-
-  </nav>
-
-
-  <!-- MAIN -->
-
-  <main>
-
-    <!-- HERO -->
-
-    <section class="hero">
-
-      <h1>
-        👀 You know <span>why</span> you're here.
-      </h1>
-
-      <p>
-        A completely normal video website containing
-        completely normal videos. Nothing suspicious.
-        Nothing weird. Definitely don't look too closely.
-      </p>
-
-      <a href="#" class="hero-button">
-        Enter the rabbit hole →
-      </a>
-
+        </div>
+      </div>
+      <div class="notice"><strong style="color:#f5a000">Tip:</strong> Use the search bar or category tabs to find more clips.</div>
     </section>
 
-
-    <!-- TRENDING -->
-
-    <div class="section-title">
-
-      <h2>
-        🔥 What's getting suspiciously popular
-      </h2>
-
-      <a href="#">
-        View everything
-      </a>
-
-    </div>
-
-
-    <div class="grid" id="videoGrid">
-
-
-      <!-- CARD 1 -->
-
-      <article
-        class="card"
-        data-title="things you probably shouldn't know"
-      >
-
-        <div class="thumbnail orange">
-
-          🕵️
-
-          <span class="duration">
-            8:42
-          </span>
-
-        </div>
-
-        <div class="card-content">
-
-          <h3>
-            10 Things to improve bed experiences
-          </h3>
-
-          <div class="meta">
-            MysteryBox · 1.4M views
-          </div>
-
-        </div>
-
-      </article>
-
-
-      <!-- CARD 2 -->
-
-      <article
-        class="card"
-        data-title="funniest moments caught on camera"
-      >
-
-        <div class="thumbnail">
-
-          😂
-
-          <span class="duration">
-            5:18
-          </span>
-
-        </div>
-
-        <div class="card-content">
-
-          <h3>
-            Hottest clips caught on camera
-          </h3>
-
-          <div class="meta">
-            LaughLab · 982K views
-          </div>
-
-        </div>
-
-      </article>
-
-
-      <!-- CARD 3 -->
-
-      <article
-        class="card"
-        data-title="things found on the internet"
-      >
-
-        <div class="thumbnail purple">
-
-          🌐
-
-          <span class="duration">
-            12:07
-          </span>
-
-        </div>
-
-        <div class="card-content">
-
-          <h3>
-            Femboy CRACKING me
-          </h3>
-
-          <div class="meta">
-            NetDive · 821K views
-          </div>
-
-        </div>
-
-      </article>
-
-
-      <!-- CARD 4 -->
-
-      <article
-        class="card"
-        data-title="late night gooning"
-      >
-
-        <div class="thumbnail blue">
-
-          🎮
-
-          <span class="duration">
-            9:31
-          </span>
-
-        </div>
-
-        <div class="card-content">
-
-          <h3>
-            Late-Night Gooning Got Weird
-          </h3>
-
-          <div class="meta">
-            PixelPlayer · 756K views
-          </div>
-
-        </div>
-
-      </article>
-
-
-      <!-- CARD 5 -->
-
-      <article
-        class="card"
-        data-title="strange places"
-      >
-
-        <div class="thumbnail green">
-
-          🗺️
-
-          <span class="duration">
-            14:22
-          </span>
-
-        </div>
-
-        <div class="card-content">
-
-          <h3>
-            Strange Clips You Can Actually Watch
-          </h3>
-
-          <div class="meta">
-            Wanderer · 634K views
-          </div>
-
-        </div>
-
-      </article>
-
-
-      <!-- CARD 6 -->
-
-      <article
-        class="card"
-        data-title="most questionable inventions"
-      >
-
-        <div class="thumbnail orange">
-
-          💡
-
-          <span class="duration">
-            7:46
-          </span>
-
-        </div>
-
-        <div class="card-content">
-
-          <h3>
-            The Most Questionable Toys Ever
-          </h3>
-
-          <div class="meta">
-            OddStuff · 529K views
-          </div>
-
-        </div>
-
-      </article>
-
-
-      <!-- CARD 7 -->
-
-      <article
-        class="card"
-        data-title="secret gooning tricks"
-      >
-
-        <div class="thumbnail blue">
-
-          🕹️
-
-          <span class="duration">
-            11:02
-          </span>
-
-        </div>
-
-        <div class="card-content">
-
-          <h3>
-            Secret Gooning Tricks Nobody Talks About
-          </h3>
-
-          <div class="meta">
-            GameVault · 421K views
-          </div>
-
-        </div>
-
-      </article>
-
-
-      <!-- CARD 8 -->
-
-      <article
-        class="card"
-        data-title="we probably shouldn't have filmed this"
-      >
-
-        <div class="thumbnail purple">
-
-          📹
-
-          <span class="duration">
-            6:29
-          </span>
-
-        </div>
-
-        <div class="card-content">
-
-          <h3>
-            We Probably Shouldn't Have Filmed This
-          </h3>
-
-          <div class="meta">
-            RandomGooners · 387K views
-          </div>
-
-        </div>
-
-      </article>
-
-    </div>
-
-
-    <!-- NOTICE -->
-
-    <div class="notice">
-
-      <strong>⚠️ Important:</strong>
-
-      This website is completely fictional.
-      The suspicious wording is purely for the aesthetic.
-      Please stop looking at the source code.
-      We know you're looking at it.
-
-    </div>
-
-
-    <!-- CATEGORIES -->
-
-    <div class="section-title">
-
-      <h2>
-        Browse the rabbit hole
-      </h2>
-
-    </div>
-
-
-    <div class="categories">
-
-      <div class="category">
-        👀 Weird
+    <aside>
+      <div class="panel">
+        <div class="side-title">Popular today</div>
+        <div class="side-item"><div class="side-thumb">🍆</div><div><strong>Gooning moments you missed</strong><small>1.2M views</small></div></div>
+        <div class="side-item"><div class="side-thumb">😂</div><div><strong>Hottest clips this week</strong><small>894K views</small></div></div>
+        <div class="side-item"><div class="side-thumb">🌐</div><div><strong>The internet finds something weird</strong><small>721K views</small></div></div>
+        <div class="side-item"><div class="side-thumb">📱</div><div><strong>Toys everyone is talking about</strong><small>603K views</small></div></div>
       </div>
-
-      <div class="category">
-        😂 Quick Fun
+      <div class="panel" style="margin-top:14px">
+        <div class="side-title">Categories</div>
+        <div class="categories">
+          <a class="cat" href="#">Sex Gags</a><a class="cat" href="#">Gooning</a>
+          <a class="cat" href="#">Toys</a><a class="cat" href="#">Mystery</a>
+          <a class="cat" href="#">ASMR</a><a class="cat" href="#">Internet</a>
+          <a class="cat" href="#">Random</a><a class="cat" href="#">Spotlight</a>
+        </div>
       </div>
+    </aside>
+  </div>
+</main>
 
-      <div class="category">
-        🎮 Gooning
-      </div>
+<footer><strong>ClipHub</strong> — a fictional video platform demo<br><br>About · Help · Terms · Privacy · Contact</footer>
 
-      <div class="category">
-        🌐 Hidden Internet Gems
-      </div>
-
-      <div class="category">
-        🕵️ Mystery
-      </div>
-
-      <div class="category">
-        🎵 ASMR
-      </div>
-
-      <div class="category">
-        🧪 Toys
-      </div>
-
-      <div class="category">
-        Gooning
-      </div>
-
-      <div class="category">
-        📹 Random
-      </div>
-
-      <div class="category">
-        🌙 After Dark
-      </div>
-
-    </div>
-
-  </main>
-
-
-  <!-- FOOTER -->
-
-  <footer>
-
-    <p>
-      <strong>ClipHub</strong>
-      — Nothing suspicious here.
-    </p>
-
-    <div class="links">
-
-      <a href="#">
-        About
-      </a>
-
-      <a href="#">
-        Contact
-      </a>
-
-      <a href="#">
-        Privacy
-      </a>
-
-      <a href="#">
-        Terms
-      </a>
-
-      <a href="#">
-        Definitely Not A Secret
-      </a>
-
-    </div>
-
-    <br>
-
-    <p>
-      © 2026 ClipHub. Probably.
-    </p>
-
-  </footer>
-
-
-  <!-- JAVASCRIPT -->
-
-  <script>
-
-    function searchVideos() {
-
-      const input =
-        document
-          .getElementById("searchInput")
-          .value
-          .toLowerCase()
-          .trim();
-
-      const cards =
-        document.querySelectorAll(".card");
-
-      cards.forEach(card => {
-
-        const title =
-          card.dataset.title.toLowerCase();
-
-        if (
-          title.includes(input) ||
-          input === ""
-        ) {
-
-          card.style.display = "";
-
-        } else {
-
-          card.style.display = "none";
-
-        }
-
-      });
-
-    }
-
-
-    document
-      .getElementById("searchInput")
-      .addEventListener(
-        "keyup",
-        function(event) {
-
-          if (event.key === "Enter") {
-
-            searchVideos();
-
-          }
-
-        }
-      );
-
-
-    // Fake button interaction
-
-    document
-      .querySelector(".hero-button")
-      .addEventListener(
-        "click",
-        function(event) {
-
-          event.preventDefault();
-
-          alert(
-            "You entered the rabbit hole. There is absolutely nothing suspicious here. 👀"
-          );
-
-        }
-      );
-
-
-    // Fake upload button
-
-    document
-      .querySelector(".upload")
-      .addEventListener(
-        "click",
-        function() {
-
-          alert(
-            "Upload feature coming soon..."
-          );
-
-        }
-      );
-
-  </script>
-
+<script>
+const input=document.getElementById('searchInput');
+const form=document.getElementById('searchForm');
+const cards=[...document.querySelectorAll('#videoGrid .card')];
+form.addEventListener('submit',function(e){
+  e.preventDefault();
+  const q=input.value.trim().toLowerCase();
+  cards.forEach(function(card){
+    card.style.display=(!q || card.innerText.toLowerCase().includes(q)) ? '' : 'none';
+  });
+});
+</script>
 </body>
 </html>
-```
